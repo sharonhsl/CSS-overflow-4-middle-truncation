@@ -151,20 +151,69 @@ The quick brown fox jumps over the l…ank
 
 #### With bidirectional text
 
-```
-// brainstorming some bidi text
+To maintain intuitiveness of offset calculation, we should use line-start position as the reference point for bidi text as well. Below are examples demonstrating why this design decision is ergonomic.
 
-"تقرير_السنوي.docx"
-"report_تقرير_final.pdf"
-"تقرير_2024_annual_report.pdf"
-"report_تقرير.pdf" vs. "تقرير_report.pdf"
-"file_name.תקציר"
-"draft(تقرير).docx"
+Example 1 and 2 shows the base cases of LTR and RTL based paragraphs with occasional strings of the opposite direction. Example 3 is a list of bidi filenames in LTR direction, to showcase the flexibility of using line-start as reference point for offset.
+
+##### Example 1: LTR paragraph with RTL content
+
+```html
+<p>
+  The title is
+  <cite dir="rtl">AN INTRODUCTION TO <span dir="ltr">c++</span></cite>
+  in arabic.
+</p>
 ```
+
+The original sentence and the truncated text are:
+
+> <div dir="ltr">The title is مدخل إلى C++ in Arabic.</div>
+> <div dir="ltr">The title …Arabic.<div>
+
+##### Example 2: RTL paragraph with LTR content
+
+```html
+<p dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</p>
+```
+
+The original sentence and the truncated text are:
+
+> <div dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</div>
+> <div dir="rtl">W3C מעביר… באירופה ל - ERCIM.</div>
+
+##### Example 3: Technical identifiers like filenames
+
+Filenames frequently mix scripts but are typically displayed in `ltr` direction for consistency with file system conventions, even when they contain RTL characters. Users can override the direction with the `dir` attribute on the block container when needed.
+
+| Filename                                            | Middle Truncated                    | Notes                                            |
+| --------------------------------------------------- | ----------------------------------- | ------------------------------------------------ |
+| `report_تقرير_final.pdf`                            | `report_…l.pdf`                     | LTR-wrapped RTL in the middle                    |
+| <div dir="ltr">`تقرير_السنوي.docx`</div>            | <div dir="ltr">`تقرير_….docx`</div> | All-RTL name with LTR extension                  |
+| <div dir="ltr">`تقرير_2024_annual_report.pdf`</div> | `2024….t.pdf`                       | RTL, Western digits, and LTR                     |
+| `report_تقرير.pdf`                                  | `report….pdf`                       | LTR start, RTL middle, LTR extension             |
+| `file_name.תקציר`                                   | `file_…תקציר`                       | Latin name with RTL extension (extension is RTL) |
+| `draft(تقرير).docx`                                 | `draft(….docx`                      | Neutral parentheses around an RTL                |
+
+Each of these strings exercises a different combination of LTR, RTL, and neutral (punctuation, digit) characters.
 
 #### With Inline-block
 
 #### With small line box
+
+When the available inline space within linebox becomes to small for the prefix, overflow marker, and suffix, the priority of elements to display should be the following:
+
+1. Overflow marker
+2. Prefix
+3. Suffix
+
+Below is an example showing a truncated with middle ellipsis as its container shrinks:
+
+```
+Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+Lorem Ipsum …industry.
+Lorem…
+…
+```
 
 #### With vertical direction text
 

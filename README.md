@@ -230,6 +230,13 @@ text-overflow: fade end clip end;
 
 ###
 
+## Open questions
+
+* How does this affect layout?
+* How does it interact with everything else? Intrinsic sizes, floats, margins, bidi, display…
+* Restrict to block layout?
+* Enforce creation of a BFC?
+
 ## Future work
 
 ### With `line-clamp`
@@ -240,4 +247,5 @@ Many thanks for valuable feedback and advice from:
 
 - Florian Rivoal
 - Andreu Botella
+- Emilio Cobos Álvarez
 - [etc.]

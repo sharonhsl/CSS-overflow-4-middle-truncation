@@ -149,13 +149,13 @@ The quick brown fox jumps over the l…ank
 }
 ```
 
-#### With bidirectional text
+### Interaction with bidirectional text
 
 To maintain intuitiveness of offset calculation, we should use line-start position as the reference point for bidi text as well. Below are examples demonstrating why this design decision is ergonomic.
 
 Example 1 and 2 shows the base cases of LTR and RTL based paragraphs with occasional strings of the opposite direction. Example 3 is a list of bidi filenames in LTR direction, to showcase the flexibility of using line-start as reference point for offset.
 
-##### Example 1: LTR paragraph with RTL content
+#### Example 1: LTR paragraph with RTL content
 
 ```html
 <p>
@@ -170,7 +170,7 @@ The original sentence and the truncated text are:
 > <div dir="ltr">The title is مدخل إلى C++ in Arabic.</div>
 > <div dir="ltr">The title …Arabic.<div>
 
-##### Example 2: RTL paragraph with LTR content
+#### Example 2: RTL paragraph with LTR content
 
 ```html
 <p dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</p>
@@ -181,7 +181,7 @@ The original sentence and the truncated text are:
 > <div dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</div>
 > <div dir="rtl">W3C מעביר… באירופה ל - ERCIM.</div>
 
-##### Example 3: Technical identifiers like filenames
+#### Example 3: Technical identifiers like filenames
 
 Filenames frequently mix scripts but are typically displayed in `ltr` direction for consistency with file system conventions, even when they contain RTL characters. Users can override the direction with the `dir` attribute on the block container when needed.
 

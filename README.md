@@ -185,14 +185,15 @@ The original sentence and the truncated text are:
 
 Filenames frequently mix scripts but are typically displayed in `ltr` direction for consistency with file system conventions, even when they contain RTL characters. Users can override the direction with the `dir` attribute on the block container when needed.
 
-| Filename                                            | Middle Truncated                    | Notes                                            |
-| --------------------------------------------------- | ----------------------------------- | ------------------------------------------------ |
-| `report_تقرير_final.pdf`                            | `report_…l.pdf`                     | LTR-wrapped RTL in the middle                    |
-| <div dir="ltr">`تقرير_السنوي.docx`</div>            | <div dir="ltr">`تقرير_….docx`</div> | All-RTL name with LTR extension                  |
-| <div dir="ltr">`تقرير_2024_annual_report.pdf`</div> | `2024….t.pdf`                       | RTL, Western digits, and LTR                     |
-| `report_تقرير.pdf`                                  | `report….pdf`                       | LTR start, RTL middle, LTR extension             |
-| `file_name.תקציר`                                   | `file_…תקציר`                       | Latin name with RTL extension (extension is RTL) |
-| `draft(تقرير).docx`                                 | `draft(….docx`                      | Neutral parentheses around an RTL                |
+| Filename                                            | Middle Truncated                    | Notes                                                |
+| --------------------------------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `report_تقرير_final.pdf`                            | `report_…l.pdf`                     | LTR-wrapped RTL in the middle                        |
+| `تقرير_السنوي.docx`                                 | `تقرير_….docx`                      | <div dir="ltr">All-RTL name with LTR extension</div> |
+| <div dir="ltr">`تقرير_السنوي.docx`</div>            | <div dir="ltr">`تقرير_….docx`</div> | All-RTL name with LTR extension in a LTR container   |
+| <div dir="ltr">`تقرير_2024_annual_report.pdf`</div> | `2024….t.pdf`                       | RTL, Western digits, and LTR                         |
+| `report_تقرير.pdf`                                  | `report….pdf`                       | LTR start, RTL middle, LTR extension                 |
+| `file_name.תקציר`                                   | `file_…תקציר`                       | Latin name with RTL extension (extension is RTL)     |
+| `draft(تقرير).docx`                                 | `draft(….docx`                      | Neutral parentheses around an RTL                    |
 
 Each of these strings exercises a different combination of LTR, RTL, and neutral (punctuation, digit) characters.
 

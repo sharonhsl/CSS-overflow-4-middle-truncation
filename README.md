@@ -188,7 +188,7 @@ Filenames frequently mix scripts but are typically displayed in `ltr` direction 
 | Filename                                            | Middle Truncated                    | Notes                                                |
 | --------------------------------------------------- | ----------------------------------- | ---------------------------------------------------- |
 | `report_تقرير_final.pdf`                            | `report_…l.pdf`                     | LTR-wrapped RTL in the middle                        |
-| `تقرير_السنوي.docx`                                 | `تقرير_….docx`                      | <div dir="ltr">All-RTL name with LTR extension</div> |
+| <div dir="rtl">`تقرير_السنوي.docx`</div>            | <div dir="rtl">`تقرير_….docx`</div> | <div dir="ltr">All-RTL name with LTR extension</div> |
 | <div dir="ltr">`تقرير_السنوي.docx`</div>            | <div dir="ltr">`تقرير_….docx`</div> | All-RTL name with LTR extension in a LTR container   |
 | <div dir="ltr">`تقرير_2024_annual_report.pdf`</div> | `2024….t.pdf`                       | RTL, Western digits, and LTR                         |
 | `report_تقرير.pdf`                                  | `report….pdf`                       | LTR start, RTL middle, LTR extension                 |

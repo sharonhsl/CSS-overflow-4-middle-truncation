@@ -273,12 +273,15 @@ If the user agent supports scrolling to reveal truncated content, the start port
 
 while keeping the end portion (filename) fixed for reference.
 
+## Further notes
+
+`text-overflow` is kept applying to block containers only for the time being.
+
 ## Pain points
 
 ## Open questions
 
 * How does it interact with everything else? Intrinsic sizes, floats, margins, bidi, display…
-* Restrict to block layout?
 * Enforce creation of a BFC?
 
 ## Future work

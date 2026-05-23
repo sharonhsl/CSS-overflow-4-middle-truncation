@@ -27,7 +27,7 @@ This document illustrates an update to the existing `text-overflow` spec to acco
 
 ## Non-goals
 
-- Describe how `text-overflow` middle truncation works with `line-clamp`.
+- Describe how middle truncation works with multi-line truncation, i.e. `line-clamp`.
 - Describe how middle truncation should be implemented by browsers or platform.
 
 ## Current solutions

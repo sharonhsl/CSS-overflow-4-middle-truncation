@@ -36,6 +36,8 @@ Many have attempted to address this either by applying `text-overflow` on split 
 
 (TODO) More current JS solutions examples and their limitations.
 
+Browser engines currently already use middle truncation for selected file names in the `<input type="file">` element.
+
 ## Proposed Solution
 
 Extend the existing `text-overflow` shorthand to handle a `middle` position marker, with adjustable overflow marker position. Note that middle truncation should be an exclusive or with start and end ellipsis.

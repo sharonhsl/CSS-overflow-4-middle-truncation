@@ -227,13 +227,53 @@ text-overflow: clip start ellipsis start;
 text-overflow: fade end clip end;
 ```
 
-## Pain points
+### Layout and scrolling behavior
 
-###
+Like end- and start-truncation, middle truncation is a purely visual effect that has no influence on the layout. This is done by making the end portion of the text visually fixed, while the UA may make the start portion scrollable to reveal different parts of the hidden content, or alternatively, the entire line may remain non-scrollable.
+
+#### Example: Scrollable middle truncation
+
+Consider a file path that is truncated in the middle with a scrollable start portion:
+
+```html
+<div class="file-path-container">
+  <p class="truncate-middle">
+    /home/user/documents/projects/important-project-name/subfolder/very-long-file-name.txt
+  </p>
+</div>
+```
+
+```css
+.file-path-container {
+  width: 50ch;
+  font-family: monospace;
+  overflow: hidden;
+}
+
+.truncate-middle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis middle;
+}
+```
+
+**Visual result:**
+```
+/home/user/documents/…very-long-file-name.txt
+```
+
+If the user agent supports scrolling to reveal truncated content, the start portion of the path could be scrolled horizontally to reveal:
+
+```
+/projects/important-project-name/subfolder…very-long-file-name.txt
+```
+
+while keeping the end portion (filename) fixed for reference.
+
+## Pain points
 
 ## Open questions
 
-* How does this affect layout?
 * How does it interact with everything else? Intrinsic sizes, floats, margins, bidi, display…
 * Restrict to block layout?
 * Enforce creation of a BFC?

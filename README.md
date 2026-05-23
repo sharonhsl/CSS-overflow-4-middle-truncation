@@ -81,7 +81,7 @@ text-overflow: ellipsis " [..]";
 
 ### Positioning
 
-`<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-start edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space. Percentages resolve against the available inline space. The keyword `middle` is equivalent to `50%`.
+`<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-start edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space. Percentages resolve against the available inline space.
 
 Below are some basic examples of offset calculation:
 
@@ -148,6 +148,9 @@ The quick brown fox jumps over the l…ank
   text-overflow: ellipsis calc(100% - 4ch);
 }
 ```
+
+The keyword `middle` is generally equivalent to `50%`.
+Though user agents are allowed to position the overflow marker intelligently, so that important parts of the text stay visible as far as possible. Examples for that might be the file extension in a file path or the domain and the final non-path part of a URL.
 
 ### Interaction with bidirectional text
 

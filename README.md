@@ -36,7 +36,21 @@ Many have attempted to address this either by applying `text-overflow` on split 
 
 (TODO) More current JS solutions examples and their limitations.
 
+### Browsers
+
 Browser engines currently already use middle truncation for selected file names in the `<input type="file">` element.
+
+Chrome:
+
+![Truncated file name in `<input type="file">` in Chrome](images/file-input-chrome.png)
+
+Safari:
+
+![Truncated file name in `<input type="file">` in Safari](images/file-input-safari.png)
+
+Firefox:
+
+![Truncated file name in `<input type="file">` in Firefox](images/file-input-firefox.png)
 
 ## Proposed Solution
 
@@ -241,7 +255,7 @@ This main benefit is that middle truncation becomes safe to apply in any layout 
 }
 ```
 
-The flex algorithm sizes the children using their full content widths. "Short text" takes its content size (10ch); the long text takes the remaining inline space via `flex: 1`. Truncation then activates within the width the long text was assigned. Removing or changing the `text-overflow` value does not resize "Short text", because the flex layout was determined by intrinsic sizes independent of truncation. 
+The flex algorithm sizes the children using their full content widths. "Short text" takes its content size (10ch); the long text takes the remaining inline space via `flex: 1`. Truncation then activates within the width the long text was assigned. Removing or changing the `text-overflow` value does not resize "Short text", because the flex layout was determined by intrinsic sizes independent of truncation.
 
 **Visual result:**
 ```
@@ -317,6 +331,21 @@ Filenames frequently mix scripts but are typically displayed in `ltr` direction 
 
 Each of these strings exercises a different combination of LTR, RTL, and neutral (punctuation, digit) characters.
 
+### Browsers
+
+As browsers already have support for middle truncation in `<input type="file">` elements, they need to handle bi-directional file names. Here is a simple example of how they truncate bi-directional file names.
+
+Chrome:
+
+![Width-limted `<input type="file">` with selected file with name تقرير_السنوي.docx in Chrome](images/rtl-file-name-with-ltr-file-extension-chrome.png)
+
+Safari:
+
+![Width-limted `<input type="file">` with selected file with name تقرير_السنوي.docx in Safari](images/rtl-file-name-with-ltr-file-extension-safari.png)
+
+Firefox:
+
+![Width-limted `<input type="file">` with selected file with name تقرير_السنوي.docx in Firefox](images/rtl-file-name-with-ltr-file-extension-firefox.png)
 
 ## Further notes
 

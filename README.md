@@ -222,45 +222,12 @@ If the user agent supports scrolling to reveal truncated content, the start port
 
 while keeping the end portion (filename) fixed for reference.
 
-### Intrinsic Sizes
-Middle truncation does not affect intrinsic sizes. Meaning, when `text-overflow: ellipsis middle` is applied, properties such as  `min-content` and `max-content` are unaffected. In other words, truncation should happen only after inline sizes have been resolved. This mirrors how the current start/end truncation work, avoiding circular dependencies between layout box and line box calculation.
+### Behaviors unchanged from `text-overflow: ellipsis`
 
-This main benefit is that middle truncation becomes safe to apply in any layout context without affecting the layout calculation, i.e. a flex item, a grid cell, a table cell, can still compute the same way. Putting this into context, adding middle truncation to an existing layout cannot cause sibling elements to resize, line counts elsewhere on the page to change, or scrollbars to appear on ancestor containers.
+Middle truncation does not introduce new behavior for the following.
 
-
-#### Example: middle truncation does not affect intrinsic sizing
-
-```html
-<div class="container">
-  <p class="filename">
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-  </p>
-  <p class="label">Short text</p>
-</div>
-```
-
-```css
-.container {
-  display: flex;
-  gap: 1rem;
-  width: 50ch;
-  font-family: monospace;
-}
-
-.filename {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis middle;
-}
-```
-
-The flex algorithm sizes the children using their full content widths. "Short text" takes its content size (10ch); the long text takes the remaining inline space via `flex: 1`. Truncation then activates within the width the long text was assigned. Removing or changing the `text-overflow` value does not resize "Short text", because the flex layout was determined by intrinsic sizes independent of truncation.
-
-**Visual result:**
-```
-Lorem ipsum dolor…re magna aliqua. Short text
-```
+- **Intrinsic sizes.** Middle truncation doesn't affect intrinsic sizes.
+- **Margins, display.** Margins and display values follow the same rules as for `text-overflow: ellipsis`.
 
 ### With Inline-block
 
@@ -353,7 +320,7 @@ Firefox:
 
 ## Open questions
 
-* How does it interact with everything else? Intrinsic sizes, floats, margins, bidi, display…
+* How does middle truncation interact with floats? Specifically: if there is a float anchored in the part of the line after the ellipsis, does the float move with the elided content or remain in its original layout position?
 * Enforce creation of a BFC?
 
 ## Future work

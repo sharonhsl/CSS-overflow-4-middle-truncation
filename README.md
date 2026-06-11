@@ -229,6 +229,85 @@ Middle truncation does not introduce new behavior for the following.
 - **Intrinsic sizes.** Middle truncation doesn't affect intrinsic sizes.
 - **Margins, display.** Margins and display values follow the same rules as for `text-overflow: ellipsis`.
 
+### With floats
+
+There are two scenarios to consider: a float that is a sibling of the truncated element, and a float that is a child of it. In both, existing browsers leave the float's position unchanged, because `text-overflow` elides only a line box's inline-level content and a float is out-of-flow. When the float is outside, it is not part of the truncated element. When the float is inside, the element contains it and the float reduces the line's available inline size, but the float is never truncated.
+
+![Comparison between a float inside and outside an ellipsized element in existing browser implementations](images/end-ellipsis-with-floats.png)
+
+```html
+<h2>Float inside ellipsized element</h2>
+<div class="ellipsized">
+  <div class="float"></div>
+  This is some sentence that is ellipsized.
+</div>
+<h2>Float outside ellipsized element</h2>
+<div class="container">
+  <div class="float"></div>
+  <p class="ellipsized">This is some sentence that is ellipsized.</p>
+  <p class="ellipsized">This is some sentence that is ellipsized.</p>
+</div>
+```
+
+```css
+.ellipsized {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100px;
+}
+
+.float {
+  width: 1em;
+  height: 1em;
+  float: right;
+  background-color: green;
+}
+```
+
+Given this behavior, middle truncation should interact with floats as follows.
+
+#### Float inside the truncated element
+
+The float keeps its position and is not truncated. The middle ellipsis marker is placed within the inline content, which fills the available inline size reduced by the float.
+
+```html
+<div class="truncated">
+  <div class="float"></div>
+  This is some sentence that is truncated in the middle.
+</div>
+```
+
+```css
+.truncated {
+  overflow: hidden;
+  text-overflow: ellipsis middle;
+  white-space: nowrap;
+  width: 100px;
+}
+
+.float {
+  width: 1em;
+  height: 1em;
+  float: right;
+  background-color: green;
+}
+```
+
+This is an illustration of how ellipsizing doesn't affect float, where the pound signs "##" represent the float block.
+```
+|------ 100px wide -----|
++-----------------------+
+| This is...middle.  ## |
++-----------------------+
+```
+
+**BFC enforcement**. TODO
+
+#### Float outside the truncated element
+
+Same as today's start and end truncation. The float is a sibling outside the truncated element, so truncation has no effect on its position.
+
 ### With Inline-block
 
 ### With small line box
@@ -247,8 +326,6 @@ Lorem Ipsum …industry.
 Lorem…
 …
 ```
-
-### With vertical direction text
 
 ## Interaction with bidirectional text
 
@@ -319,8 +396,6 @@ Firefox:
 `text-overflow` is kept applying to block containers only for the time being.
 
 ## Open questions
-
-* How does middle truncation interact with floats? Specifically: if there is a float anchored in the part of the line after the ellipsis, does the float move with the elided content or remain in its original layout position?
 * Enforce creation of a BFC?
 
 ## Future work
@@ -334,4 +409,3 @@ Many thanks for valuable feedback and advice from:
 - Florian Rivoal
 - Andreu Botella
 - Emilio Cobos Álvarez
-- [etc.]

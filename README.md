@@ -32,9 +32,9 @@ This document illustrates an update to the existing `text-overflow` spec to acco
 
 ## Current solutions
 
-Many have attempted to address this either by applying `text-overflow` on split text across two DOM elements, or by using `ResizeObserver()` to detect overflow and format strings with JavaScript. However, these workarounds pose usability, performance, and accessibility concerns. Such problems are especially amplified in data-heavy displays like DataTable.
+Many have attempted to address this either by applying `text-overflow` on split text across two DOM elements, or by using `ResizeObserver()` to detect overflow and format strings with JavaScript. However, these workarounds pose usability, accessibility, and performance concerns. Such problems are especially amplified in data-heavy displays like tables.
 
-(TODO) More current JS solutions examples and their limitations.
+One notable concern is the inability to copy and paste the non-truncated version of the clipped text, unlike text truncated via CSS `text-overflow: ellipsis`, where the underlying text node is untouched and copying yields the original string. Implementations can also overlook providing an accessible name (e.g. via `aria-label`) for the truncated element, resulting in a broken assistive technology experience. Additionally, solutions relying on `ResizeObserver()` must know the available inline space before computing the truncated string, requiring an extra rendering cycle and continuous listening for container size changes, which adds further performance overhead.
 
 ### Browsers
 

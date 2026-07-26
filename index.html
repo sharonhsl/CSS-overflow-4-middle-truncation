@@ -7,7 +7,7 @@
     body {
         font-family: system-ui, sans-serif;
         margin: 2rem;
-        max-width: 60ch;
+        max-width: 70ch;
     }
 
     .truncate {
@@ -61,6 +61,26 @@
         width: 10ch;
     }
 
+    .small-line-box {
+        --text-overflow: ellipsis middle;
+    }
+
+    .small-full {
+        width: 74ch;
+    }
+
+    .small-mild {
+        width: 22ch;
+    }
+
+    .small-prefix {
+        width: 4ch;
+    }
+
+    .small-marker {
+        width: 1ch;
+    }
+
 
     /* Full string stays in the accessible tree but takes no visual space.
      NOTE: because it is absolutely positioned it also stops contributing
@@ -73,10 +93,28 @@
         clip-path: inset(50%);
         white-space: nowrap;
     }
+
+    .grammar {
+        display: block;
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+    }
 </style>
 
 <h1><code>text-overflow: ellipsis middle</code></h1>
+This is a minmal demo to the proposed middle ellipsis spec to text overflow handling.
+The elements are styled by declaring custom CSS property <code>--text-overflow</code>, and
+truncated according to the spec (with some caveats, e.g. float/scroll not yet implemented).
+<h2>Syntax</h2>
+<code class="grammar">text-overflow = [ [ clip | &lt;overflow-marker&gt; ] && [ start | end ]? ]{1,2}
+                | [ &lt;overflow-marker&gt; && [ middle | &lt;length-percentage&gt; ] ];
+                &lt;overflow-marker&gt; = [ ellipsis | &lt;string&gt; | fade | &lt;fade()&gt; ];
+</code>
 
+<h2>Demo</h2>
 <h3>Offset calculation</h3>
 <p class="truncate">The quick brown fox jumps over the lazy dog by the river bank</p>
 <p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
@@ -97,15 +135,32 @@
 <h3>Bidirectional text</h3>
 <p class="truncate">bahrain مصر kuwait</p>
 <p class="truncate">The title is مفتاح معايير الويب in Arabic.</p>
+<p class="truncate" dir="ltr">The title is <cite dir="rtl">AN INTRODUCTION TO <span dir="ltr">c++</span></cite> in
+    arabic.</p>
+<div class="rtl-container">
+    <p class="truncate" dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</p>
+</div>
+
 <h3>Bidirectional text - file names</h3>
 <p class="truncate bidi">report_تقرير_final.pdf</p>
 <div class="rtl-container">
     <p class="truncate bidi" dir="rtl">تقرير_السنوي.docx</p>
 </div>
+<p class="truncate bidi" dir="ltr">تقرير_السنوي.docx</p>
 <p class="truncate bidi" dir="ltr">تقرير_2024_annual_report.pdf</p>
 <p class="truncate bidi">report_تقرير.pdf</p>
 <p class="truncate bidi">file_name.תקציר</p>
 <p class="truncate bidi">draft(تقرير).docx</p>
+
+<h3>Small line box (overflow marker &gt; prefix &gt; suffix priority)</h3>
+<p class="truncate small-line-box small-full">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-mild">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-prefix">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
+<p class="truncate small-line-box small-marker">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
 
 <script>
     'use strict';

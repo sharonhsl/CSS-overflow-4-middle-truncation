@@ -22,6 +22,10 @@
         --text-overflow: ellipsis middle;
     }
 
+    .scrollable {
+		overflow: auto;
+	}
+
     .existing {
         --text-overflow: ellipsis;
     }
@@ -158,6 +162,9 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     industry.</p>
 <p class="truncate small-line-box small-marker">Lorem Ipsum is simply dummy text of the printing and typesetting
     industry.</p>
+
+<h3>Scrollable</h3>
+<p class="truncate scrollable">This text is for testing how scrollable truncation is handled.</p>
 
 <script>
     'use strict';

@@ -52,7 +52,7 @@
         --text-overflow: ellipsis 50px;
     }
 
-    .offset-end {
+    .offset-start {
         --text-overflow: ellipsis calc(100% - 4ch);
     }
 
@@ -121,7 +121,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 <p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
 <p class="truncate offset-3ch">The quick brown fox jumps over the lazy dog by the river bank</p>
 <p class="truncate offset-px">The quick brown fox jumps over the lazy dog by the river bank</p>
-<p class="truncate offset-end">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate offset-start">The quick brown fox jumps over the lazy dog by the river bank</p>
 <p class="truncate custom-marker">The quick brown fox jumps over the lazy dog by the river bank</p>
 
 <h3>Grapheme</h3>
@@ -243,20 +243,20 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
     /* ── 3. Offset resolution ─────────────────────────────────────────────
        Descriptor + available inline size (px) → marker position (px) from
-       the line-start edge. Clamped per the README Positioning rules. */
+       the line-end edge. Clamped per the README Positioning rules. */
     function resolveOffset(position, options) {
         const { avail, ch } = options;
         let px = 0;
 
         const resolveTerm = (t) => {
-            if (t.type === 'percent') return avail * t.value / 100;
+            if (t.type === 'percent') return avail * (1 - t.value / 100);
             if (t.type === 'length') {
-                if (t.unit === 'px') return t.value;
-                if (t.unit === 'ch') return t.value * ch;
+                if (t.unit === 'px') return avail - t.value;
+                if (t.unit === 'ch') return avail - t.value * ch;
             }
         }
-        if (position.type === 'calc') px = position.terms.reduce((sum, t) =>
-            sum + t.sign * resolveTerm(t), 0);
+        if (position.type === 'calc') px = avail - position.terms.reduce((sum, t) =>
+            sum - t.sign * resolveTerm(t), 0);
         else px = resolveTerm(position);
         return Math.min(Math.max(px, 0), avail); // clamp to [0, avail]
     }

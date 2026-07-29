@@ -71,7 +71,7 @@ text-overflow: ellipsis middle;
 /* middle ellipsis with offset */
 text-overflow: ellipsis 30%;
 text-overflow: ellipsis 3ch;
-text-overflow: ellipsis calc(100%-4ch);
+text-overflow: ellipsis calc(100% - 4ch);
 
 /* start and end with marker */
 text-overflow: clip start ellipsis end;
@@ -97,7 +97,7 @@ text-overflow: ellipsis " [..]";
 
 ### Positioning
 
-`<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-start edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space. Percentages resolve against the available inline space.
+`<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-end edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space. Percentages resolve against the available inline space.
 
 Below are some basic examples of offset calculation:
 

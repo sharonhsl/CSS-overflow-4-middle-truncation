@@ -248,16 +248,17 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const { avail, ch } = options;
         let px = 0;
 
-        const resolveTerm = (t) => {
-            if (t.type === 'percent') return avail * (1 - t.value / 100);
+        const resolveTerm = (t, markerWidth) => {
+            if (t.type === 'percent') return avail *
+			    (1 - t.value / 100 - markerWidth / avail * t.value / 100);
             if (t.type === 'length') {
                 if (t.unit === 'px') return avail - t.value;
                 if (t.unit === 'ch') return avail - t.value * ch;
             }
         }
-        if (position.type === 'calc') px = avail - position.terms.reduce((sum, t) =>
+        if (position.type === 'calc') px = avail + position.terms.reduce((sum, t) =>
             sum - t.sign * resolveTerm(t), 0);
-        else px = resolveTerm(position);
+        else px = resolveTerm(position, options.markerWidth);
         return Math.min(Math.max(px, 0), avail); // clamp to [0, avail]
     }
 
@@ -556,7 +557,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const avail = el.clientWidth
             - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
 
-        const offsetPx = resolveOffset(state.desc.position, { avail, ch: width('0') });
+        const offsetPx = resolveOffset(state.desc.position, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });
         const dir = cs.direction;
 
         const gen = ++state.gen;                          // stamp this call

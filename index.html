@@ -126,7 +126,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
 <h3>Grapheme</h3>
 <p class="truncate" dir="">
-    👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦
+    👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦
 </p>
 
 <h3>RTL</h3>
@@ -513,7 +513,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         for (const el of affected) {
             const state = registry.get(el);
             const newText = el.textContent;   // user's write nuked our layers
-            state.fullText = newText;
+            state.fullText = newText.trim();
             state.visual = buildLayers(el, newText);   // rebuild them
             update(el);
         }
@@ -534,7 +534,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         if (!desc) return;
         // TODO: bail unless the element is a block container
 
-        const fullText = el.textContent;                 // TODO: mixed inline content
+        const fullText = el.textContent.trim();                 // TODO: mixed inline content
         const visual = buildLayers(el, fullText);
         registry.set(el, { desc, fullText, visual, gen: 0 });
 

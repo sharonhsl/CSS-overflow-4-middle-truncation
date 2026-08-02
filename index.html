@@ -18,13 +18,13 @@
         /* demo only: drag to resize */
         border: 1px solid #999;
         padding: 4px 6px;
-        width: 30ch;
+        width: 40ch;
         --text-overflow: ellipsis middle;
     }
 
     .scrollable {
-		overflow: auto;
-	}
+        overflow: auto;
+    }
 
     .existing {
         --text-overflow: ellipsis;
@@ -218,7 +218,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         ) ?? [];
         if (tokens.length !== 2) return null;
 
-        const desc = { marker: null, position: null };
+        const desc = { marker: null, offset: null };
         const markerToken = tokens[0];
         const offsetToken = tokens[1];
 
@@ -227,39 +227,38 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         else if (/^(['"]).*\1$/.test(markerToken)) desc.marker = markerToken.slice(1, -1);
         else desc.marker = '';
 
-        if (offsetToken === 'middle') desc.position = { type: 'percent', value: 50 };
+        if (offsetToken === 'middle') desc.offset = { type: 'percent', value: 50 };
         else if (/^\d+(\.\d+)?%$/.test(offsetToken))
-            desc.position = { type: 'percent', value: parseFloat(offsetToken) };
+            desc.offset = { type: 'percent', value: parseFloat(offsetToken) };
         else if (/^\d+(\.\d+)?px$/.test(offsetToken))
-            desc.position = { type: 'length', value: parseFloat(offsetToken), unit: 'px' };
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'px' };
         else if (/^\d+(\.\d+)?ch$/.test(offsetToken))
-            desc.position = { type: 'length', value: parseFloat(offsetToken), unit: 'ch' };
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'ch' };
         else if (CALC.test(offsetToken))
-            desc.position = parseCalc(offsetToken);
+            desc.offset = parseCalc(offsetToken);
         else return null;
 
-        return desc.marker && desc.position ? desc : null;
+        return desc.marker && desc.offset ? desc : null;
     }
 
     /* ── 3. Offset resolution ─────────────────────────────────────────────
-       Descriptor + available inline size (px) → marker position (px) from
-       the line-end edge. Clamped per the README Positioning rules. */
-    function resolveOffset(position, options) {
+       Finds the length of prefix given an offset from line-end */
+    function resolvePrefixBudget(offset, options) {
         const { avail, ch } = options;
         let px = 0;
 
         const resolveTerm = (t, markerWidth) => {
             if (t.type === 'percent') return avail *
-			    (1 - t.value / 100 - markerWidth / avail * t.value / 100);
+                (1 - t.value / 100 - markerWidth / avail * t.value / 100);
             if (t.type === 'length') {
                 if (t.unit === 'px') return avail - t.value;
                 if (t.unit === 'ch') return avail - t.value * ch;
             }
         }
-        if (position.type === 'calc') px = avail + position.terms.reduce((sum, t) =>
+        if (offset.type === 'calc') px = avail + offset.terms.reduce((sum, t) =>
             sum - t.sign * resolveTerm(t), 0);
-        else px = resolveTerm(position, options.markerWidth);
-        return Math.min(Math.max(px, 0), avail); // clamp to [0, avail]
+        else px = resolveTerm(offset, options.markerWidth);
+        return Math.min(Math.max(px, 0), avail - options.markerWidth); // clamp to [0, avail - marker]
     }
 
     /* ── 4. Measurement ───────────────────────────────────────────────────
@@ -273,7 +272,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     const width = (text) => ctx.measureText(text).width;
 
     /* ── 5. The cut ───────────────────────────────────────────────────────
-       Greedy: grow the prefix from the string start up to the offset, give
+       Greedy: grow the prefix from the string start up to its budget, give
        the marker its width, fill the rest from the string end.
        Priority when space runs out: marker, then prefix, then suffix.
 
@@ -282,15 +281,14 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
        cuts in VISUAL order instead (bidi-middle-truncation.md). Biggest known
        gap in this version. */
 
-    function cutLogical(full, avail, offsetPx, marker, dir) {
+    function cutLogical(full, avail, prefixBudget, marker, dir) {
         if (width(full) <= avail) return full;           // no overflow, no marker
 
         const markerW = width(marker);
-        if (markerW >= avail) return marker;             // marker survives longest when space runs out
+        if (markerW >= avail) return marker;             // available space is shorter than marker
 
         const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
         const clusters = Array.from(seg.segment(full), s => s.segment);
-        const prefixBudget = Math.min(offsetPx, avail - markerW);
 
         let prefix = '', prefixCount = 0;
         for (const cl of clusters) {
@@ -325,7 +323,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     const RLI = '⁧', LRI = '⁦', PDI = '⁩';
     const isolateStart = (level) => (level % 2 ? RLI : LRI);
 
-    async function cutVisual(full, avail, offsetPx, marker, dir) {
+    async function cutVisual(full, avail, prefixBudget, marker, dir) {
         if (width(full) <= avail) return full;
         const markerW = width(marker);
         if (markerW >= avail) return marker;
@@ -379,7 +377,6 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
            of one would leave the rest in the wrong place, with dropped text
            on both sides of it. */
         const kept = new Set();
-        const prefixBudget = Math.min(offsetPx, avail - markerW);
         let prefixW = 0;
         prefixWalk:
         for (const run of visualRuns) {
@@ -457,7 +454,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
            ⚠ LIMITATION: falls back to the logical cut for that case (see
            README §"Interaction with bidirectional text"). */
         if (stretches.filter(s => !s.isKeep).length > 1) {
-            return cutLogical(full, avail, offsetPx, marker, dir);
+            return cutLogical(full, avail, prefixBudget, marker, dir);
         }
 
         const emitPiece = (p) => {
@@ -472,11 +469,11 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     const RTL_STRONG = /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0750-\u077F\u0780-\u07BF\u07C0-\u07FF\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
     const needsBidi = (text, dir) => dir === 'rtl' || RTL_STRONG.test(text);
 
-    function cut(full, avail, offsetPx, marker, dir) {
-        if (!needsBidi(full, dir)) return cutLogical(full, avail, offsetPx, marker, dir);
+    function cut(full, avail, prefixBudget, marker, dir) {
+        if (!needsBidi(full, dir)) return cutLogical(full, avail, prefixBudget, marker, dir);
 
         // bidi text uses cutVisual (falls back to cutLogical in one edge case, see above)
-        return cutVisual(full, avail, offsetPx, marker, dir);
+        return cutVisual(full, avail, prefixBudget, marker, dir);
     }
 
     /* ── 6. Render: the a11y contract ─────────────────────────────────────
@@ -557,11 +554,11 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const avail = el.clientWidth
             - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
 
-        const offsetPx = resolveOffset(state.desc.position, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });
+        const prefixBudget = resolvePrefixBudget(state.desc.offset, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });
         const dir = cs.direction;
 
-        const gen = ++state.gen;                          // stamp this call
-        const result = await cut(state.fullText, avail, offsetPx, state.desc.marker, dir);
+        const gen = ++state.gen;
+        const result = await cut(state.fullText, avail, prefixBudget, state.desc.marker, dir);
 
         if (state.gen !== gen || !registry.has(el)) return; // superseded, or disconnected mid-flight
         state.visual.textContent = result;

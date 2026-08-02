@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>ellipsis middle - end ellipsis handling</title>
+
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        max-width: 70ch;
+    }
+
+    .truncate {
+        font-family: ui-monospace, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        resize: horizontal;
+        /* demo only: drag to resize */
+        border: 1px solid #999;
+        padding: 4px 6px;
+        width: 40ch;
+        --text-overflow: ellipsis middle;
+    }
+
+    .scrollable {
+        overflow: auto;
+    }
+
+    .existing {
+        --text-overflow: ellipsis;
+    }
+
+    .rtl-container {
+        display: flex;
+        flex-direction: row-reverse;
+    }
+
+    .existing-rtl {
+        --text-overflow: ellipsis;
+        direction: rtl;
+    }
+
+    .offset-30 {
+        --text-overflow: ellipsis 30%;
+    }
+
+    .offset-3ch {
+        --text-overflow: ellipsis 3ch;
+    }
+
+    .offset-px {
+        --text-overflow: ellipsis 50px;
+    }
+
+    .offset-start {
+        --text-overflow: ellipsis calc(100% - 4ch);
+    }
+
+    .custom-marker {
+        --text-overflow: " [..]" middle;
+    }
+
+    .bidi {
+        width: 10ch;
+    }
+
+    .small-line-box {
+        --text-overflow: ellipsis middle;
+    }
+
+    .small-full {
+        width: 74ch;
+    }
+
+    .small-mild {
+        width: 22ch;
+    }
+
+    .small-prefix {
+        width: 4ch;
+    }
+
+    .small-marker {
+        width: 1ch;
+    }
+
+    /* the prefix holds the whole string, so it is what assistive tech reads and
+       what a copy yields. the suffix repeats the end of that string for looks
+       only: hidden from the a11y tree, and kept out of the selection.
+       both are inline-block so text-overflow applies and so each reorders its
+       own bidi content independently of the other. */
+    .mt-prefix,
+    .mt-suffix {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        vertical-align: top;
+    }
+
+    .mt-prefix {
+        text-overflow: ellipsis;
+    }
+
+    .mt-suffix {
+        user-select: none;
+    }
+
+    .grammar {
+        display: block;
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+    }
+</style>
+
+<h1><code>text-overflow: ellipsis middle</code></h1>
+This is a minimal demo of the proposed middle ellipsis spec for text overflow handling.
+The elements are styled by declaring custom CSS property <code>--text-overflow</code>, and
+truncated according to the spec (with some caveats, e.g. float/scroll not yet implemented).
+<p>
+    <b>ℹ️ This demo breaks a truncated text into two parts and apply <code>text-overflow: ellipsis</code> on the prefix.
+    </b>
+</p>
+
+<h2>Syntax</h2>
+<code class="grammar">text-overflow = [ [ clip | &lt;overflow-marker&gt; ] && [ start | end ]? ]{1,2}
+                | [ &lt;overflow-marker&gt; && [ middle | &lt;length-percentage&gt; ] ];
+                &lt;overflow-marker&gt; = [ ellipsis | &lt;string&gt; | fade | &lt;fade()&gt; ];
+</code>
+
+<h2>Demo</h2>
+<h3>Offset calculation</h3>
+<p class="truncate">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate offset-3ch">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate offset-px">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate offset-start">The quick brown fox jumps over the lazy dog by the river bank</p>
+<p class="truncate custom-marker">The quick brown fox jumps over the lazy dog by the river bank</p>
+
+<h3>Grapheme</h3>
+<p class="truncate" dir="">
+    👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦
+</p>
+
+<h3>RTL</h3>
+<div class="rtl-container">
+    <p class="truncate" dir="rtl">هذه الفقرة باللغة العربية ، لذا يجب الانتقال من اليمين إلى اليسار.</p>
+</div>
+<h3>Bidirectional text</h3>
+<p class="truncate">bahrain مصر kuwait</p>
+<p class="truncate">The title is مفتاح معايير الويب in Arabic.</p>
+<p class="truncate" dir="ltr">The title is <cite dir="rtl">AN INTRODUCTION TO <span dir="ltr">c++</span></cite> in
+    arabic.</p>
+<div class="rtl-container">
+    <p class="truncate" dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</p>
+</div>
+
+<h3>Bidirectional text - file names</h3>
+<p class="truncate bidi">report_تقرير_final.pdf</p>
+<div class="rtl-container">
+    <p class="truncate bidi" dir="rtl">تقرير_السنوي.docx</p>
+</div>
+<p class="truncate bidi" dir="ltr">تقرير_السنوي.docx</p>
+<p class="truncate bidi" dir="ltr">تقرير_2024_annual_report.pdf</p>
+<p class="truncate bidi">report_تقرير.pdf</p>
+<p class="truncate bidi">file_name.תקציר</p>
+<p class="truncate bidi">draft(تقرير).docx</p>
+
+<h3>Small line box (overflow marker &gt; prefix &gt; suffix priority)</h3>
+<p class="truncate small-line-box small-full">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-mild">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-prefix">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
+<p class="truncate small-line-box small-marker">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
+
+<h3>Scrollable</h3>
+<p class="truncate scrollable">This text is for testing how scrollable truncation is handled.</p>
+
+<script>
+    'use strict';
+
+    /* ── 1. Feature detection ─────────────────────────────────────────────
+       a polyfill should delete itself once native support lands (always
+       false today, since nothing ships this syntax yet) */
+    const NATIVE = CSS.supports('text-overflow', 'ellipsis middle');
+
+    /* one <length-percentage> term: number + unit */
+    const TERM = /(-?\d*\.?\d+)(%|ch|px)/;
+
+    /* whole-value shape: calc( term ( ± term )* ) */
+    const CALC = new RegExp(
+        String.raw`^calc\(\s*` + TERM.source +
+        String.raw`(?:\s+[+-]\s+` + TERM.source + String.raw`)*\s*\)$`,
+        'i'
+    );
+
+    /* ── 2. Parser ────────────────────────────────────────────────────────
+       Input: the raw string from the --text-overflow carrier property.
+       Output: a descriptor object, or null for anything not understood.
+       Grammar subset: [ ellipsis | <string> ] && [ middle | <percentage> ]
+       null on anything unrecognized — don't accept what native would reject */
+
+    /**
+     * Example: 'calc(100% - 4ch)' → { type: 'calc', terms: [
+     *   { sign: +1, type: 'percent', value: 100 },
+     *   { sign: -1, type: 'length', value: 4, unit: 'ch' },
+     * ] }
+     */
+    function parseCalc(raw) {
+        const inner = raw.slice(raw.indexOf('(') + 1, -1).trim();
+        const terms = [];
+        let sign = 1;
+
+        for (const tok of inner.split(/\s+/)) {
+            if (tok === '+') { sign = 1; continue; }
+            if (tok === '-') { sign = -1; continue; }
+            const m = /^(-?\d*\.?\d+)(%|ch|px)$/i.exec(tok);
+            terms.push(m[2] === '%'
+                ? { sign, type: 'percent', value: parseFloat(m[1]) }
+                : { sign, type: 'length', value: parseFloat(m[1]), unit: m[2].toLowerCase() });
+        }
+        return { type: 'calc', terms };
+    }
+
+    function parse(raw) {
+        const tokens = raw.trim().match(
+            /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|calc\([^)]*\)|\S+/g
+        ) ?? [];
+        if (tokens.length !== 2) return null;
+
+        const desc = { marker: null, offset: null };
+        const markerToken = tokens[0];
+        const offsetToken = tokens[1];
+
+        if (markerToken === 'ellipsis') desc.marker = '\u2026';
+        else if (markerToken === 'clip') desc.marker = '';
+        else if (/^(['"]).*\1$/.test(markerToken)) desc.marker = markerToken.slice(1, -1);
+        else desc.marker = '';
+
+        if (offsetToken === 'middle') desc.offset = { type: 'percent', value: 50 };
+        else if (/^\d+(\.\d+)?%$/.test(offsetToken))
+            desc.offset = { type: 'percent', value: parseFloat(offsetToken) };
+        else if (/^\d+(\.\d+)?px$/.test(offsetToken))
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'px' };
+        else if (/^\d+(\.\d+)?ch$/.test(offsetToken))
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'ch' };
+        else if (CALC.test(offsetToken))
+            desc.offset = parseCalc(offsetToken);
+        else return null;
+
+        return desc.marker && desc.offset ? desc : null;
+    }
+
+    /* ── 3. Offset resolution ─────────────────────────────────────────────
+       Finds the width of the prefix box given an offset from line-end. The
+       browser draws the marker inside that box, so no room is reserved for it
+       here — it only sets the floor, since the marker outranks the prefix.
+       Example: avail = 40px, offset=10px
+                return 40-10 = 30px */
+    function resolvePrefixBoxWidth(offset, options) {
+        const { avail, ch, markerWidth } = options;
+
+        const resolveTerm = (t) => {
+            if (t.type === 'percent') return avail * t.value / 100;
+            if (t.type === 'length') {
+                if (t.unit === 'px') return t.value;
+                if (t.unit === 'ch') return t.value * ch;
+            }
+        }
+        const terms = offset.type === 'calc' ? offset.terms : [{ sign: 1, ...offset }];
+        const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0);
+        return Math.min(Math.max(px, markerWidth), avail); // clamp to [marker, avail]
+    }
+
+    /* ── 4. Measurement ───────────────────────────────────────────────────
+       Canvas measureText stands in for the engine's shaper. Firefox often
+       returns an empty `font` shorthand, so rebuild it from longhands. */
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    function setFont(cs) {
+        ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    }
+    const width = (text) => ctx.measureText(text).width;
+
+    /* ── 5. The cut ───────────────────────────────────────────────────────
+       Only the suffix is cut here. The browser clips the prefix box at its
+       line-end edge and paints the marker there, so the prefix never needs
+       slicing.
+
+       Graphemes are taken from the string end in LOGICAL order, which is the
+       order the offset counts back from for bidi text too. Each box then
+       reorders its own content on its own, because an inline-block is opaque
+       to the bidi algorithm running in the paragraph around it. */
+    function getSuffix(full, budget) {
+        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        const clusters = Array.from(seg.segment(full), s => s.segment);
+
+        let suffix = '';
+        for (let i = clusters.length - 1; i >= 0; i--) {
+            if (width(clusters[i] + suffix) > budget) break;
+            suffix = clusters[i] + suffix;
+        }
+        return suffix;
+    }
+
+    /* ── 6. Render: the a11y contract ─────────────────────────────────────
+       The prefix carries the whole string and is the only layer in the
+       accessible tree; the suffix repeats the end of it for presentation only.
+       Truncation must never change what AT announces. */
+    function buildLayers(el, fullText) {
+        el.textContent = '';
+
+        const prefix = document.createElement('span');
+        prefix.className = 'mt-prefix';
+        prefix.textContent = fullText;
+
+        const suffix = document.createElement('span');
+        suffix.className = 'mt-suffix';
+        suffix.setAttribute('aria-hidden', 'true');
+
+        el.append(prefix, suffix);   // no whitespace between them, it would render
+        return { prefix, suffix };
+    }
+
+    /* Hand the marker to the browser. Custom strings are not supported
+       everywhere, so fall back to the ellipsis the prefix rule already sets. */
+    function markerStyle(marker) {
+        if (marker === '…') return 'ellipsis';
+        const quoted = JSON.stringify(marker);
+        return CSS.supports('text-overflow', quoted) ? quoted : 'ellipsis';
+    }
+
+    /* ── 7. Lifecycle ─────────────────────────────────────────────────────
+       register → (updates driven by triggers) → disconnect restores DOM. */
+    const registry = new WeakMap();
+    const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) update(entry.target);
+    });
+    const mo = new MutationObserver((mutations) => {
+        // Dedupe — one user write can fire multiple mutation records
+        const affected = new Set();
+        for (const m of mutations) {
+            let node = m.target;
+            while (node && !registry.has(node)) node = node.parentNode;
+            if (node) affected.add(node);
+        }
+        for (const el of affected) {
+            const state = registry.get(el);
+            const newText = el.textContent;   // user's write nuked our layers
+            state.fullText = newText.trim();
+            state.layers = buildLayers(el, newText);   // rebuild them
+            update(el);
+        }
+    });
+
+    function register(el) {
+        if (NATIVE || registry.has(el)) return;          // native handles it, or already registered
+
+        const raw = getComputedStyle(el).getPropertyValue('--text-overflow').trim();
+
+        // defer to native text-overflow if the value is already supported
+        if (CSS.supports('text-overflow', raw)) {
+            el.style.setProperty('text-overflow', raw);
+            return;
+        }
+
+        const desc = parse(raw);
+        if (!desc) return;
+        // TODO: bail unless the element is a block container
+
+        const fullText = el.textContent.trim();                 // TODO: mixed inline content
+        const layers = buildLayers(el, fullText);
+        registry.set(el, { desc, fullText, layers });
+
+        // triggers so far: resize, DOM mutation. font load + manual refresh() still TODO
+        ro.observe(el);
+        mo.observe(el, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+        });
+        update(el);
+    }
+
+    function update(el) {
+        const state = registry.get(el);
+        if (!state) return;
+
+        const cs = getComputedStyle(el);
+        setFont(cs);
+        const avail = el.clientWidth
+            - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
+
+        const { prefix, suffix } = state.layers;
+
+        if (width(state.fullText) <= avail) {   // fits, so nothing to split and no marker
+            prefix.style.width = '';
+            prefix.style.textOverflow = '';
+            suffix.style.width = '';
+            suffix.textContent = '';
+            mo.takeRecords();
+            return;
+        }
+
+        const markerWidth = width(state.desc.marker);
+        const prefixBoxWidth = resolvePrefixBoxWidth(state.desc.offset, { avail, ch: width('0'), markerWidth });
+        const suffixBoxWidth = avail - prefixBoxWidth;
+
+        prefix.style.width = `${prefixBoxWidth}px`;
+        prefix.style.textOverflow = markerStyle(state.desc.marker);
+        suffix.style.width = `${suffixBoxWidth}px`;
+        suffix.textContent = getSuffix(state.fullText, suffixBoxWidth);
+
+        mo.takeRecords(); // prevent infinite loop
+    }
+
+
+    function disconnect(el) {
+        const state = registry.get(el);
+        if (!state) return;
+        ro.unobserve(el);
+        el.textContent = state.fullText;
+        mo.takeRecords();
+        registry.delete(el);
+    }
+
+    /* ── 8. Boot ──────────────────────────────────────────────────────────
+       Custom properties cannot be queried with a CSS selector, so scan a
+       known candidate class. (A production version might scan stylesheets
+       to discover which selectors set the carrier property.) */
+    for (const el of document.querySelectorAll('.truncate')) register(el);
+
+    /* Expose for console experiments: MT.disconnect(el), MT.register(el) */
+    window.MT = { register, update, disconnect, parse, getSuffix };
+</script>
+
+</html>

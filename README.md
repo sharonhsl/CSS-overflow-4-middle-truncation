@@ -100,23 +100,21 @@ text-overflow: ellipsis " [..]";
 `<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-end edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space. Percentages resolve against the available inline space.
 
 Below are some basic examples of offset calculation:
-
 ```
 // ruler for a 40ch wide mono-space container
 0123456789012345678901234567890123456789
 
 ├──── 20 chars ────┤├──── 20 chars ────┤
-The quick brown fox …g by the river bank
+The quick brown fox…og by the river bank
 
-├─12 chars ┤├──────── 28 chars ────────┤
-The quick br… lazy dog by the river bank
+├───────── 28 chars ───────┤├─12 chars ┤
+The quick brown fox jumps o…e river bank
 
-├3┤├─────────── 37 chars ──────────────┤
-The …over the lazy dog by the river bank
-
-├─────────── 36 chars ─────────────┤├─4┤
+├───────────── 37 chars ────────────┤├3┤
 The quick brown fox jumps over the l…ank
 
+├4─┤├──────────── 36 chars ────────────┤
+The… over the lazy dog by the river bank
 ```
 
 ```html
@@ -130,7 +128,7 @@ The quick brown fox jumps over the l…ank
   <p class="truncate offset-3ch">
     The quick brown fox jumps over the lazy dog by the river bank
   </p>
-  <p class="truncate offset-end">
+  <p class="truncate offset-start">
     The quick brown fox jumps over the lazy dog by the river bank
   </p>
 </div>
@@ -160,7 +158,7 @@ The quick brown fox jumps over the l…ank
   text-overflow: ellipsis 3ch;
 }
 
-.offset-end {
+.offset-start {
   text-overflow: ellipsis calc(100% - 4ch);
 }
 ```
@@ -329,9 +327,9 @@ Lorem…
 
 ## Interaction with bidirectional text
 
-To maintain intuitiveness of offset calculation, we should use line-start position as the reference point for bidi text as well. Below are examples demonstrating why this design decision is ergonomic.
+To maintain intuitiveness of offset calculation, we should use line-end position as the reference point for bidi text as well. Below are examples demonstrating why this design decision is ergonomic.
 
-Example 1 and 2 shows the base cases of LTR and RTL based paragraphs with occasional strings of the opposite direction. Example 3 is a list of bidi filenames in LTR direction, to showcase the flexibility of using line-start as reference point for offset.
+Example 1 and 2 show the base cases of LTR and RTL paragraphs with occasional strings of the opposite direction. Example 3 is a list of bidi filenames in LTR direction, showing how a container-relative reference point behaves when the text inside runs the other way.
 
 ### Example 1: LTR paragraph with RTL content
 
@@ -373,7 +371,7 @@ Filenames frequently mix scripts but are typically displayed in `ltr` direction 
 | `file_name.תקציר`                                   | `file_…תקציר`                       | Latin name with RTL extension (extension is RTL)     |
 | `draft(تقرير).docx`                                 | `draft(….docx`                      | Neutral parentheses around an RTL                    |
 
-Each of these strings exercises a different combination of LTR, RTL, and neutral (punctuation, digit) characters.
+Each of these strings exercises a different combination of LTR, RTL, and neutral (punctuation, digit) characters. In every row the visible tail is the end of the string in logical order, because the offset counts back from the line-end edge. That holds even where the tail is drawn on the far side of the line from where a purely visual reading would put it, as in the all-RTL name shown in an LTR container.
 
 ### Browsers
 

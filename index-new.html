@@ -105,6 +105,18 @@
         user-select: none;
     }
 
+    .mt-line {
+        display: block;
+        width: max-content;
+    }
+
+    .mt-scrolls .mt-suffix {
+        position: sticky;
+        inset-inline-end: 0;
+        background: Canvas;
+        pointer-events: none;
+    }
+
     .grammar {
         display: block;
         white-space: pre-wrap;
@@ -118,7 +130,7 @@
 <h1><code>text-overflow: ellipsis middle</code></h1>
 This is a minimal demo of the proposed middle ellipsis spec for text overflow handling.
 The elements are styled by declaring custom CSS property <code>--text-overflow</code>, and
-truncated according to the spec (with some caveats, e.g. float/scroll not yet implemented).
+truncated according to the spec (with some caveats, e.g. float not yet implemented).
 <p>
     <b>ℹ️ This demo breaks a truncated text into two parts and apply <code>text-overflow: ellipsis</code> on the prefix.
     </b>
@@ -179,6 +191,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     industry.</p>
 
 <h3>Scrollable</h3>
+<p>Scroll sideways: the suffix stays put at the line-end edge while the start scrolls under it, and the marker
+    disappears once nothing is left hidden.</p>
 <p class="truncate scrollable">This text is for testing how scrollable truncation is handled.</p>
 
 <script>
@@ -289,8 +303,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
     /* ── 5. The cut ───────────────────────────────────────────────────────
        Only the suffix is cut here. The browser clips the prefix box at its
-       line-end edge and paints the marker there, so the prefix never needs
-       slicing.
+       line-end edge and paints the marker there, or the suffix carries the
+       marker when the box is scrollable, so the prefix never needs slicing.
 
        Graphemes are taken from the string end in LOGICAL order, which is the
        order the offset counts back from for bidi text too. Each box then
@@ -323,8 +337,12 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         suffix.className = 'mt-suffix';
         suffix.setAttribute('aria-hidden', 'true');
 
-        el.append(prefix, suffix);   // no whitespace between them, it would render
-        return { prefix, suffix };
+        const line = document.createElement('span');
+        line.className = 'mt-line';
+        line.append(prefix, suffix);   // no whitespace between them, it would render
+
+        el.append(line);
+        return { line, prefix, suffix };
     }
 
     /* Hand the marker to the browser. Custom strings are not supported
@@ -375,15 +393,17 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
         const fullText = el.textContent.trim();                 // TODO: mixed inline content
         const layers = buildLayers(el, fullText);
-        registry.set(el, { desc, fullText, layers });
+        const onScroll = () => paintSuffix(el);
+        registry.set(el, { desc, fullText, layers, onScroll });
 
-        // triggers so far: resize, DOM mutation. font load + manual refresh() still TODO
+        // triggers so far: resize, DOM mutation, scroll. font load + manual refresh() still TODO
         ro.observe(el);
         mo.observe(el, {
             childList: true,
             subtree: true,
             characterData: true,
         });
+        el.addEventListener('scroll', onScroll, { passive: true });
         update(el);
     }
 
@@ -398,10 +418,16 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
         const { prefix, suffix } = state.layers;
 
+        state.scrollable = cs.overflowX === 'auto' || cs.overflowX === 'scroll';
+        state.overflowing = false;
+        state.suffix = '';
+        el.classList.toggle('mt-scrolls', state.scrollable);
+
         if (width(state.fullText) <= avail) {   // fits, so nothing to split and no marker
             prefix.style.width = '';
             prefix.style.textOverflow = '';
             suffix.style.width = '';
+            suffix.style.marginInlineStart = '';
             suffix.textContent = '';
             mo.takeRecords();
             return;
@@ -410,13 +436,45 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const markerWidth = width(state.desc.marker);
         const prefixBoxWidth = resolvePrefixBoxWidth(state.desc.offset, { avail, ch: width('0'), markerWidth });
         const suffixBoxWidth = avail - prefixBoxWidth;
+        state.suffix = getSuffix(state.fullText, suffixBoxWidth);
+        state.overflowing = true;
 
-        prefix.style.width = `${prefixBoxWidth}px`;
-        prefix.style.textOverflow = markerStyle(state.desc.marker);
-        suffix.style.width = `${suffixBoxWidth}px`;
-        suffix.textContent = getSuffix(state.fullText, suffixBoxWidth);
+        if (state.scrollable) {
+            const padEnd = parseFloat(cs.direction === 'rtl' ? `-${cs.paddingLeft}` : cs.paddingRight);
+            prefix.style.width = '';
+            prefix.style.textOverflow = '';
+            suffix.style.boxShadow = `${padEnd}px 0 0 Canvas`;
+            paintSuffix(el, true);
+        } else {
+            prefix.style.width = `${prefixBoxWidth}px`;
+            prefix.style.textOverflow = markerStyle(state.desc.marker);
+            suffix.style.width = `${suffixBoxWidth}px`;
+            suffix.style.marginInlineStart = '';
+            suffix.style.boxShadow = '';
+            suffix.textContent = state.suffix;
+        }
 
         mo.takeRecords(); // prevent infinite loop
+    }
+
+    function paintSuffix(el, force) {
+        const state = registry.get(el);
+        if (!state || !state.scrollable || !state.overflowing) return;
+
+        const atEnd = Math.abs(el.scrollLeft) >= el.scrollWidth - el.clientWidth - 1;
+        const text = (atEnd ? '' : state.desc.marker) + state.suffix;
+
+        const { suffix } = state.layers;
+        if (!force && text === suffix.textContent) return;
+
+        suffix.textContent = text;
+        suffix.style.width = '';
+        suffix.style.marginInlineStart = '0';
+
+        const suffixWidth = suffix.getBoundingClientRect().width;
+        suffix.style.marginInlineStart = `${-suffixWidth}px`;
+
+        mo.takeRecords();
     }
 
 
@@ -424,6 +482,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const state = registry.get(el);
         if (!state) return;
         ro.unobserve(el);
+        el.removeEventListener('scroll', state.onScroll);
+        el.classList.remove('mt-scrolls');
         el.textContent = state.fullText;
         mo.takeRecords();
         registry.delete(el);

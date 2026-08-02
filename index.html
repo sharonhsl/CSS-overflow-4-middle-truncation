@@ -257,7 +257,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         }
         const terms = offset.type === 'calc' ? offset.terms : [{ sign: 1, ...offset }];
         const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0) - markerWidth;
-        return Math.min(Math.max(px, 0), avail - markerWidth); // clamp to [0, avail - marker]
+        return Math.min(px, avail - markerWidth); // negative when the cut point sits less than a marker's width from the line start
     }
 
     /* ── 4. Measurement ───────────────────────────────────────────────────
@@ -288,6 +288,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
         const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
         const clusters = Array.from(seg.segment(full), s => s.segment);
+
+        if (prefixBudget >= 0 && width(clusters[0]) > prefixBudget) prefixBudget = avail - markerW;
 
         let prefix = '', prefixCount = 0;
         for (const cl of clusters) {
@@ -367,6 +369,9 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         // Flip the sort for RTL so visualRuns[0] is always the true start.
         const dirSign = baseLevel % 2 ? -1 : 1;
         const visualRuns = runs.slice().sort((a, b) => dirSign * (visualPosOf[a.start] - visualPosOf[b.start]));
+
+        const firstCluster = visualRuns[0].clusters[0];
+        if (prefixBudget >= 0 && width(firstCluster.text) > prefixBudget) prefixBudget = avail - markerW;
 
         /* Greedy fill from the visual edges, same idea as cutLogical. A run at
            the paragraph's own base level is never reordered, so it's safe to
@@ -550,7 +555,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
         const cs = getComputedStyle(el);
         setFont(cs);
-        const avail = el.clientWidth
+        const avail = el.getBoundingClientRect().width
             - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
 
         const prefixBudget = resolvePrefixBudget(state.desc.offset, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });

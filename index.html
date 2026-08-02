@@ -242,23 +242,22 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     }
 
     /* ── 3. Offset resolution ─────────────────────────────────────────────
-       Finds the length of prefix given an offset from line-end */
+       Finds the length of prefix given an offset from line-end.
+       Example: avail = 40px, offset=10px, markerWidth = 2px
+                return 40-10-2 = 28px */
     function resolvePrefixBudget(offset, options) {
-        const { avail, ch } = options;
-        let px = 0;
+        const { avail, ch, markerWidth } = options;
 
-        const resolveTerm = (t, markerWidth) => {
-            if (t.type === 'percent') return avail *
-                (1 - t.value / 100 - markerWidth / avail * t.value / 100);
+        const resolveTerm = (t) => {
+            if (t.type === 'percent') return avail * t.value / 100;
             if (t.type === 'length') {
-                if (t.unit === 'px') return avail - t.value;
-                if (t.unit === 'ch') return avail - t.value * ch;
+                if (t.unit === 'px') return t.value;
+                if (t.unit === 'ch') return t.value * ch;
             }
         }
-        if (offset.type === 'calc') px = avail + offset.terms.reduce((sum, t) =>
-            sum - t.sign * resolveTerm(t), 0);
-        else px = resolveTerm(offset, options.markerWidth);
-        return Math.min(Math.max(px, 0), avail - options.markerWidth); // clamp to [0, avail - marker]
+        const terms = offset.type === 'calc' ? offset.terms : [{ sign: 1, ...offset }];
+        const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0) - markerWidth;
+        return Math.min(Math.max(px, 0), avail - markerWidth); // clamp to [0, avail - marker]
     }
 
     /* ── 4. Measurement ───────────────────────────────────────────────────

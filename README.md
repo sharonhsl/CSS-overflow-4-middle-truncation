@@ -24,17 +24,18 @@ This document illustrates an update to the existing `text-overflow` spec to acco
 
 - Provide an ergonomic, backward-compatible interface to apply middle truncation to overflowing text.
 - Allow authors to change the position of the default middle truncation overflow marker.
+- Make the syntax flexible enough, so it could be used on block containers with multiple lines in the future, e.g. in conjunction with `line-clamp` and its longhands.
 
 ## Non-goals
 
-- Describe how middle truncation works with multi-line truncation, i.e. `line-clamp`.
-- Describe how middle truncation should be implemented by browsers or platform.
+- Describe how middle truncation works block containers, i.e. `line-clamp` and its longhands.
+- Describe how middle truncation should be implemented by user agents or platforms.
 
 ## Current solutions
 
 Many have attempted to address this either by applying `text-overflow` on split text across two DOM elements, or by using `ResizeObserver()` to detect overflow and format strings with JavaScript. However, these workarounds pose usability, accessibility, and performance concerns. Such problems are especially amplified in data-heavy displays like tables.
 
-One notable concern is the inability to copy and paste the non-truncated version of the clipped text, unlike text truncated via CSS `text-overflow: ellipsis`, where the underlying text node is untouched and copying yields the original string. Implementations can also overlook providing an accessible name (e.g. via `aria-label`) for the truncated element, resulting in a broken assistive technology experience. Additionally, solutions relying on `ResizeObserver()` must know the available inline space before computing the truncated string, requiring an extra rendering cycle and continuous listening for container size changes, which adds further performance overhead.
+One notable concern is the inability to copy and paste the non-truncated version of the clipped text, unlike text truncated via CSS's `text-overflow: ellipsis`, where the underlying text node is untouched and copying yields the original string. Implementations can also overlook providing an accessible name (e.g. via `aria-label`) for the truncated element, resulting in a broken assistive technology experience. Additionally, solutions relying on `ResizeObserver()` must know the available inline space before computing the truncated string, requiring an extra rendering cycle and continuous listening for container size changes, which adds further performance overhead.
 
 ### Browsers
 
@@ -52,16 +53,20 @@ Firefox:
 
 ![Truncated file name in `<input type="file">` in Firefox](images/file-input-firefox.png)
 
-## Proposed Solution
+## Proposed solution
 
-Extend the existing `text-overflow` shorthand to handle a `middle` position marker, with adjustable overflow marker position. Note that middle truncation should be an exclusive or with start and end ellipsis.
+Extend the existing `text-overflow` shorthand to handle a `middle` position marker,
+with an adjustable overflow marker position expressed by a `<length-percentage>`.
+Note that middle truncation is made mutually exclusive with the existing start and end ellipsis.
+It also excludes the `clip` keyword for the middle truncation case, as clipping the middle of a string without a visible marker results in bad user experience.
+And it introduces (optional) explicit keywords for the start and end positions to avoid ambiguity when the overflow marker is specified.
 
 ### Syntax
 
 ```ebnf
 text-overflow = [ [ clip | <overflow-marker> ] && [ start | end ]? ]{1,2}
-              | [ <overflow-marker> && [ middle | <length-percentage> ] ];
-<overflow-marker>= [ ellipsis | <string> | fade | <fade()> ];
+              | [ <overflow-marker> && [ middle | <length-percentage [0,∞]> ] ];
+<overflow-marker> = [ ellipsis | <string> | fade | <fade()> ];
 ```
 
 ```css
@@ -168,18 +173,20 @@ Though user agents are allowed to position the overflow marker intelligently, so
 
 #### With invalid entry
 
-Though the syntax permits, repeated declaration of `start` or `end` marker will be regarded the same as not specifying `text-overflow`.
+While the syntax permits it, repeated declaration of `start` or `end` markers will be regarded the same as not specifying `text-overflow`.
 
 ```css
 text-overflow: clip start ellipsis start;
 text-overflow: fade end clip end;
 ```
 
+ The syntax might be changed to disallow these invalid combinations.
+
 ## Layout behavior
 
 ### Scrolling
 
-Like end- and start-truncation, middle truncation is a purely visual effect that has no influence on the layout. This is done by making the end portion of the text visually fixed, while the UA may make the start portion scrollable to reveal different parts of the hidden content, or alternatively, the entire line may remain non-scrollable.
+Like end- and start and end truncation, middle truncation is a purely visual effect that has no influence on the layout. This is done by making the end portion of the text visually fixed, while the UA may make the start portion scrollable to reveal different parts of the hidden content, or alternatively, the entire line may remain non-scrollable.
 
 #### Example: Scrollable middle truncation
 
@@ -375,7 +382,7 @@ Each of these strings exercises a different combination of LTR, RTL, and neutral
 
 ### Browsers
 
-As browsers already have support for middle truncation in `<input type="file">` elements, they need to handle bi-directional file names. Here is a simple example of how they truncate bi-directional file names.
+As browsers already have support for middle truncation in `<input type="file">` elements, they need to handle bidirectional file names. Here is a simple example of how they truncate bidirectional file names.
 
 Chrome:
 

@@ -104,8 +104,8 @@ text-overflow: ellipsis " [..]";
 
 `<length-percentage>` specifies the overflow marker position measured against the available inline space within a line box, with the offset starting from the line-end edge. Such inline space excludes any portion that overflows out of the block container. Values less than `0` are clamped to `0`. Values greater than the inline space are clamped to the extent of the space.
 
-Percentages resolve against the available inline space subtracting the width of the overflow marker. For example, `text-overflow: ellipsis 30%` positions the ellipsis at 30% of the available inline space from the line-end edge.
-This ensures that the overflow marker is always visible and the offset marker is visually centered within the available inline space.
+Percentages resolve against the available inline space subtracting the width of the overflow marker, aligning with the behavior of `background-position`. This means, a value of 0% aligns the end-edge of the overflow marker with the line-end edge, while a value of 100% aligns its start-edge with the line-start edge. A value of 50% positions the overflow marker in the middle of the available inline space, with its center aligned with the center of the space.
+This ensures that the overflow marker is always visible and the behavior is predictable.
 
 Below are some basic examples of offset calculation:
 

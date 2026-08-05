@@ -107,73 +107,42 @@ text-overflow: ellipsis " [..]";
 Percentages resolve against the available inline space subtracting the width of the overflow marker, aligning with the behavior of `background-position`. This means, a value of 0% aligns the end-edge of the overflow marker with the line-end edge, while a value of 100% aligns its start-edge with the line-start edge. A value of 50% positions the overflow marker in the middle of the available inline space, with its center aligned with the center of the space.
 This ensures that the overflow marker is always visible and the behavior is predictable.
 
+The keyword `middle` is generally equivalent to `50%`.
+Though user agents are allowed to position the overflow marker intelligently, so that important parts of the text stay visible as far as possible. Examples for that might be the file extension in a file path or the domain and the final non-path part of a URL.
+
 Below are some basic examples of offset calculation:
 
 ```
 // ruler for a 40ch wide mono-space container
-0123456789012345678901234567890123456789
 
-├──── 20 chars ────┤├──── 20 chars ────┤
+// ellipsis middle / ellipsis 50%
+├─────19 chars────┤1├─────20 chars─────┤
 The quick brown fox…og by the river bank
 
-├───────── 28 chars ───────┤├─12 chars ┤
+// ellipsis 30%
+├─────────27 chars────────┤1├─12 chars─┤
 The quick brown fox jumps o…e river bank
 
-├───────────── 37 chars ────────────┤├3┤
+// ellipsis 3ch
+├─────────────36 chars─────────────┤1├3┤
 The quick brown fox jumps over the l…ank
 
-├4─┤├──────────── 36 chars ────────────┤
-The… over the lazy dog by the river bank
+// ellipsis 100%
+1├───────────────39 chars──────────────┤
+…mps over the lazy dog by the river bank
+
+// ellipsis calc(100% - 4ch)
+├─4┤1├───────────36 chars──────────────┤
+The …over the lazy dog by the river bank
+
+// ellipsis 0%
+├───────────────39 chars──────────────┤1
+The quick brown fox jumps over the lazy…
+
+// Custom marker " [..]"
+├────17 chars───┤├─5─┤├─────18 chars───┤
+The quick brown f [..] by the river bank
 ```
-
-```html
-<div class="container">
-  <p class="truncate middle">
-    The quick brown fox jumps over the lazy dog by the river bank
-  </p>
-  <p class="truncate offset-30">
-    The quick brown fox jumps over the lazy dog by the river bank
-  </p>
-  <p class="truncate offset-3ch">
-    The quick brown fox jumps over the lazy dog by the river bank
-  </p>
-  <p class="truncate offset-start">
-    The quick brown fox jumps over the lazy dog by the river bank
-  </p>
-</div>
-```
-
-```css
-.container {
-  width: 40ch;
-  font-family: ui-monospace, monospace;
-  font-size: 16px;
-}
-
-.truncate {
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.middle {
-  text-overflow: ellipsis middle;
-}
-
-.offset-30 {
-  text-overflow: ellipsis 30%;
-}
-
-.offset-3ch {
-  text-overflow: ellipsis 3ch;
-}
-
-.offset-start {
-  text-overflow: ellipsis calc(100% - 4ch);
-}
-```
-
-The keyword `middle` is generally equivalent to `50%`.
-Though user agents are allowed to position the overflow marker intelligently, so that important parts of the text stay visible as far as possible. Examples for that might be the file extension in a file path or the domain and the final non-path part of a URL.
 
 #### With invalid entry
 

@@ -53,7 +53,15 @@
     }
 
     .offset-start {
+        --text-overflow: ellipsis 100%;
+    }
+
+    .offset-start-4ch {
         --text-overflow: ellipsis calc(100% - 4ch);
+    }
+
+    .offset-end {
+        --text-overflow: ellipsis 0%;
     }
 
     .custom-marker {
@@ -117,11 +125,21 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
 <h2>Demo</h2>
 <h3>Offset calculation</h3>
+<h4><code>ellipsis middle</code></h4>
 <p class="truncate">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 30%</code></h4>
 <p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 3ch</code></h4>
 <p class="truncate offset-3ch">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 50px</code></h4>
 <p class="truncate offset-px">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 100%</code> (= <code>text-overflow: ellipsis start</code>)</h4>
 <p class="truncate offset-start">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis calc(100% - 4ch)</code></h4>
+<p class="truncate offset-start-4ch">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 0%</code> (= <code>text-overflow: ellipsis end</code> / <code>text-overflow: ellipsis</code>)</h4>
+<p class="truncate offset-end">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4>Custom marker</h4>
 <p class="truncate custom-marker">The quick brown fox jumps over the lazy dog by the river bank</p>
 
 <h3>Grapheme</h3>

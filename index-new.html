@@ -84,11 +84,6 @@
         width: 1ch;
     }
 
-    /* the prefix holds the whole string, so it is what assistive tech reads and
-       what a copy yields. the suffix repeats the end of that string for looks
-       only: hidden from the a11y tree, and kept out of the selection.
-       both are inline-block so text-overflow applies and so each reorders its
-       own bidi content independently of the other. */
     .mt-prefix,
     .mt-suffix {
         display: inline-block;
@@ -115,6 +110,18 @@
         inset-inline-end: 0;
         background: Canvas;
         pointer-events: none;
+    }
+
+    /* This ::selection selector is used just to keep highlight formatting
+        the same as the suffix (.mt-faux-selected). */
+    .truncate ::selection {
+        background-color: Highlight;
+        color: HighlightText;
+    }
+    /* This does a fake highlight on the uncopyable suffix */
+    .mt-suffix.mt-faux-selected {
+        background-color: Highlight;
+        color: HighlightText;
     }
 
     .grammar {
@@ -353,6 +360,31 @@ truncated according to the spec (with some caveats, e.g. float not yet implement
         return CSS.supports('text-overflow', quoted) ? quoted : 'ellipsis';
     }
 
+    /*  Returns true when the current selection ends exactly at the end of the text node. */
+    function selectionCoversPrefixEnd(prefix) {
+        const selection = document.getSelection();
+        const text = prefix.firstChild;
+        if (!selection || selection.isCollapsed || !selection.rangeCount || !text) return false;
+
+        try {
+            // (text, text.length) is the position immediately after the last char of prefix
+            return selection.getRangeAt(0).comparePoint(text, text.length) === 0;
+        } catch {
+            return false;
+        }
+    }
+
+    function paintFauxSelection(el) {
+        const state = registry.get(el);
+        if (!state) return;
+
+        const { prefix, suffix } = state.layers;
+        suffix.classList.toggle(
+            'mt-faux-selected',
+            state.overflowing && selectionCoversPrefixEnd(prefix)
+        );
+    }
+
     /* ── 7. Lifecycle ─────────────────────────────────────────────────────
        register → (updates driven by triggers) → disconnect restores DOM. */
     const registry = new WeakMap();
@@ -429,6 +461,7 @@ truncated according to the spec (with some caveats, e.g. float not yet implement
             suffix.style.width = '';
             suffix.style.marginInlineStart = '';
             suffix.textContent = '';
+            suffix.classList.remove('mt-faux-selected');
             mo.takeRecords();
             return;
         }
@@ -454,6 +487,7 @@ truncated according to the spec (with some caveats, e.g. float not yet implement
             suffix.textContent = state.suffix;
         }
 
+        paintFauxSelection(el);
         mo.takeRecords(); // prevent infinite loop
     }
 
@@ -488,6 +522,10 @@ truncated according to the spec (with some caveats, e.g. float not yet implement
         mo.takeRecords();
         registry.delete(el);
     }
+
+    document.addEventListener('selectionchange', () => {
+        for (const el of document.querySelectorAll('.truncate')) paintFauxSelection(el);
+    });
 
     /* ── 8. Boot ──────────────────────────────────────────────────────────
        Custom properties cannot be queried with a CSS selector, so scan a

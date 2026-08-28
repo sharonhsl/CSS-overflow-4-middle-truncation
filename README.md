@@ -1,4 +1,4 @@
-# [css-overflow-4] Middle Truncation
+# [css-overflow-5] Middle Truncation
 
 Authors:
 
@@ -28,7 +28,7 @@ This document illustrates an update to the existing `text-overflow` spec to acco
 
 ## Non-goals
 
-- Describe how middle truncation works block containers, i.e. `line-clamp` and its longhands.
+- Describe how middle truncation works with block containers, i.e. `line-clamp` and its longhands.
 - Describe how middle truncation should be implemented by user agents or platforms.
 
 ## Current solutions

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>ellipsis middle</title>
+<title>ellipsis middle - end ellipsis handling</title>
 
 <style>
     body {
@@ -53,15 +53,7 @@
     }
 
     .offset-start {
-        --text-overflow: ellipsis 100%;
-    }
-
-    .offset-start-4ch {
         --text-overflow: ellipsis calc(100% - 4ch);
-    }
-
-    .offset-end {
-        --text-overflow: ellipsis 0%;
     }
 
     .custom-marker {
@@ -92,15 +84,44 @@
         width: 1ch;
     }
 
-    /* full string stays in the a11y tree, invisible on screen.
-       position: absolute so it's excluded from intrinsic sizing */
-    .mt-full {
-        position: absolute;
-        width: 1px;
-        height: 1px;
+    .mt-prefix,
+    .mt-suffix {
+        display: inline-block;
         overflow: hidden;
-        clip-path: inset(50%);
         white-space: nowrap;
+        vertical-align: top;
+    }
+
+    .mt-prefix {
+        text-overflow: ellipsis;
+    }
+
+    .mt-suffix {
+        user-select: none;
+    }
+
+    .mt-line {
+        display: block;
+        width: max-content;
+    }
+
+    .mt-scrolls .mt-suffix {
+        position: sticky;
+        inset-inline-end: 0;
+        background: Canvas;
+        pointer-events: none;
+    }
+
+    /* This ::selection selector is used just to keep highlight formatting
+        the same as the suffix (.mt-faux-selected). */
+    .truncate ::selection {
+        background-color: Highlight;
+        color: HighlightText;
+    }
+    /* This does a fake highlight on the uncopyable suffix */
+    .mt-suffix.mt-faux-selected {
+        background-color: Highlight;
+        color: HighlightText;
     }
 
     .grammar {
@@ -116,7 +137,12 @@
 <h1><code>text-overflow: ellipsis middle</code></h1>
 This is a minimal demo of the proposed middle ellipsis spec for text overflow handling.
 The elements are styled by declaring custom CSS property <code>--text-overflow</code>, and
-truncated according to the spec (with some caveats, e.g. float/scroll not yet implemented).
+truncated according to the spec (with some caveats, e.g. float not yet implemented).
+<p>
+    <b>ℹ️ This demo breaks a truncated text into two parts and apply <code>text-overflow: ellipsis</code> on the prefix.
+    </b>
+</p>
+
 <h2>Syntax</h2>
 <code class="grammar">text-overflow = [ [ clip | &lt;overflow-marker&gt; ] && [ start | end ]? ]{1,2}
                 | [ &lt;overflow-marker&gt; && [ middle | &lt;length-percentage&gt; ] ];
@@ -125,21 +151,11 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
 
 <h2>Demo</h2>
 <h3>Offset calculation</h3>
-<h4><code>ellipsis middle</code></h4>
 <p class="truncate">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis 30%</code></h4>
 <p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis 3ch</code></h4>
 <p class="truncate offset-3ch">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis 50px</code></h4>
 <p class="truncate offset-px">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis 100%</code> (= <code>text-overflow: ellipsis start</code>)</h4>
 <p class="truncate offset-start">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis calc(100% - 4ch)</code></h4>
-<p class="truncate offset-start-4ch">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4><code>ellipsis 0%</code> (= <code>text-overflow: ellipsis end</code> / <code>text-overflow: ellipsis</code>)</h4>
-<p class="truncate offset-end">The quick brown fox jumps over the lazy dog by the river bank</p>
-<h4>Custom marker</h4>
 <p class="truncate custom-marker">The quick brown fox jumps over the lazy dog by the river bank</p>
 
 <h3>Grapheme</h3>
@@ -182,6 +198,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     industry.</p>
 
 <h3>Scrollable</h3>
+<p>Scroll sideways: the suffix stays put at the line-end edge while the start scrolls under it, and the marker
+    disappears once nothing is left hidden.</p>
 <p class="truncate scrollable">This text is for testing how scrollable truncation is handled.</p>
 
 <script>
@@ -260,10 +278,12 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     }
 
     /* ── 3. Offset resolution ─────────────────────────────────────────────
-       Finds the length of prefix given an offset from line-end.
-       Example: avail = 40px, offset=10px, markerWidth = 2px
-                return 40-10-2 = 28px */
-    function resolvePrefixBudget(offset, options) {
+       Finds the width of the prefix box given an offset from line-end. The
+       browser draws the marker inside that box, so no room is reserved for it
+       here — it only sets the floor, since the marker outranks the prefix.
+       Example: avail = 40px, offset=10px
+                return 40-10 = 30px */
+    function resolvePrefixBoxWidth(offset, options) {
         const { avail, ch, markerWidth } = options;
 
         const resolveTerm = (t) => {
@@ -274,8 +294,8 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
             }
         }
         const terms = offset.type === 'calc' ? offset.terms : [{ sign: 1, ...offset }];
-        const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0) - markerWidth;
-        return Math.min(px, avail - markerWidth); // negative when the cut point sits less than a marker's width from the line start
+        const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0);
+        return Math.min(Math.max(px, markerWidth), avail); // clamp to [marker, avail]
     }
 
     /* ── 4. Measurement ───────────────────────────────────────────────────
@@ -289,230 +309,80 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     const width = (text) => ctx.measureText(text).width;
 
     /* ── 5. The cut ───────────────────────────────────────────────────────
-       Greedy: grow the prefix from the string start up to its budget, give
-       the marker its width, fill the rest from the string end.
-       Priority when space runs out: marker, then prefix, then suffix.
+       Only the suffix is cut here. The browser clips the prefix box at its
+       line-end edge and paints the marker there, or the suffix carries the
+       marker when the box is scrollable, so the prefix never needs slicing.
 
-       ⚠ This slices the string in LOGICAL order, one code point at a time.
-       That only matches visual order for pure-LTR text — real bidi handling
-       cuts in VISUAL order instead (bidi-middle-truncation.md). Biggest known
-       gap in this version. */
-
-    function cutLogical(full, avail, prefixBudget, marker, dir) {
-        if (width(full) <= avail) return full;           // no overflow, no marker
-
-        const markerW = width(marker);
-        if (markerW >= avail) return marker;             // available space is shorter than marker
-
+       Graphemes are taken from the string end in LOGICAL order, which is the
+       order the offset counts back from for bidi text too. Each box then
+       reorders its own content on its own, because an inline-block is opaque
+       to the bidi algorithm running in the paragraph around it. */
+    function getSuffix(full, budget) {
         const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
         const clusters = Array.from(seg.segment(full), s => s.segment);
 
-        if (prefixBudget >= 0 && width(clusters[0]) > prefixBudget) prefixBudget = avail - markerW;
-
-        let prefix = '', prefixCount = 0;
-        for (const cl of clusters) {
-            if (width(prefix + cl) > prefixBudget) break;
-            prefix += cl;
-            prefixCount += 1;
-        }
-
-        const suffixBudget = avail - width(prefix) - markerW;
-        let suffix = '', suffixCount = 0;
+        let suffix = '';
         for (let i = clusters.length - 1; i >= 0; i--) {
-            if (width(clusters[i] + suffix) > suffixBudget) break;
+            if (width(clusters[i] + suffix) > budget) break;
             suffix = clusters[i] + suffix;
-            suffixCount += 1;
         }
-
-        /* Guard: prefix and suffix must not overlap in the source string,
-           or short strings render duplicated content. */
-        if (prefixCount + suffixCount >= clusters.length) return full;
-
-        return prefix + marker + suffix;
-    }
-
-    let bidiPromise;
-    function loadBidi() {
-        return bidiPromise ??= import('https://esm.sh/bidi-js').then(m => m.default());
-    }
-    loadBidi(); // preload bidi.js to avoid flashing when parsing bidi text
-
-    /* Unicode directional isolates: force a run to resolve as RTL/LTR on its
-       own, independent of whatever ends up next to it after truncation. */
-    const RLI = '⁧', LRI = '⁦', PDI = '⁩';
-    const isolateStart = (level) => (level % 2 ? RLI : LRI);
-
-    async function cutVisual(full, avail, prefixBudget, marker, dir) {
-        if (width(full) <= avail) return full;
-        const markerW = width(marker);
-        if (markerW >= avail) return marker;
-
-        const bidi = await loadBidi();
-        const embeddingLevels = bidi.getEmbeddingLevels(full, dir);
-        const reorderSegments = bidi.getReorderSegments(full, embeddingLevels);
-        const baseLevel = embeddingLevels.paragraphs[0].level;
-
-        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-        const clusters = [];
-        let charIdx = 0;
-        for (const { segment: text } of seg.segment(full)) {
-            clusters.push({ text, level: embeddingLevels.levels[charIdx] });
-            charIdx += text.length;
-        }
-
-        /* Map each logical code-unit index to its visual position by replaying
-           the same range-reversals bidi-js used to compute reorderSegments
-           (UAX#9 rule L2: reverse runs of level >= L, for L from max down to 1). */
-        const order = Array.from({ length: full.length }, (_, i) => i);
-        for (const [start, end] of reorderSegments) {
-            const slice = order.slice(start, end + 1).reverse();
-            order.splice(start, slice.length, ...slice);
-        }
-        const visualPosOf = new Array(full.length);
-        order.forEach((logicalIdx, visualPos) => { visualPosOf[logicalIdx] = visualPos; });
-
-        // group clusters into maximal same-level runs (logical order), tracking
-        // each run's starting code-unit index for the visual sort below
-        const runs = [];
-        let runOffset = 0;
-        for (const cl of clusters) {
-            const last = runs[runs.length - 1];
-            if (last && last.level === cl.level) last.clusters.push(cl);
-            else runs.push({ level: cl.level, start: runOffset, clusters: [cl] });
-            runOffset += cl.text.length;
-        }
-        // Visual position 0 is always the screen-leftmost run, regardless of
-        // paragraph direction — but "prefix" means closest to the paragraph's
-        // own start edge, which is the right side for an RTL base level.
-        // Flip the sort for RTL so visualRuns[0] is always the true start.
-        const dirSign = baseLevel % 2 ? -1 : 1;
-        const visualRuns = runs.slice().sort((a, b) => dirSign * (visualPosOf[a.start] - visualPosOf[b.start]));
-
-        const firstCluster = visualRuns[0].clusters[0];
-        if (prefixBudget >= 0 && width(firstCluster.text) > prefixBudget) prefixBudget = avail - markerW;
-
-        /* Greedy fill from the visual edges, same idea as cutLogical. A run at
-           the paragraph's own base level is never reordered, so it's safe to
-           slice character-by-character like plain text. A nested run can't be
-           split — it's kept whole or dropped whole — because bidi reordering
-           can move a nested run relative to its neighbors: keeping only part
-           of one would leave the rest in the wrong place, with dropped text
-           on both sides of it. */
-        const kept = new Set();
-        let prefixW = 0;
-        prefixWalk:
-        for (const run of visualRuns) {
-            if (run.level === baseLevel) {
-                for (const cl of run.clusters) {
-                    if (prefixW + width(cl.text) > prefixBudget) break prefixWalk;
-                    prefixW += width(cl.text);
-                    kept.add(cl);
-                }
-            } else {
-                const runText = run.clusters.map(cl => cl.text).join('');
-                if (prefixW + width(runText) > prefixBudget) break prefixWalk;
-                prefixW += width(runText);
-                run.clusters.forEach(cl => kept.add(cl));
-            }
-        }
-
-        const suffixBudget = avail - prefixW - markerW;
-        let suffixW = 0;
-        suffixWalk:
-        for (let r = visualRuns.length - 1; r >= 0; r--) {
-            const run = visualRuns[r];
-            if (run.clusters.every(cl => kept.has(cl))) continue;   // already kept by the prefix walk
-            if (run.level === baseLevel) {
-                // Base-level run, never reordered — safe to fill from this end too.
-                // Stop once a cluster already kept by the prefix walk is reached.
-                for (let i = run.clusters.length - 1; i >= 0; i--) {
-                    const cl = run.clusters[i];
-                    if (kept.has(cl)) break;
-                    if (suffixW + width(cl.text) > suffixBudget) break suffixWalk;
-                    suffixW += width(cl.text);
-                    kept.add(cl);
-                }
-            } else {
-                const runText = run.clusters.map(cl => cl.text).join('');
-                if (suffixW + width(runText) > suffixBudget) break suffixWalk;
-                suffixW += width(runText);
-                run.clusters.forEach(cl => kept.add(cl));
-            }
-        }
-
-        if (kept.size >= clusters.length) return full;    // overlap guard, as in cutLogical
-
-        // Split runs into keep/drop pieces, logical order.
-        // Base-level runs can split around the gap: kept-before, dropped, kept-after.
-        // Nested runs cannot be split, they're either kept or dropped.
-        const pieces = [];
-        for (const run of runs) {
-            const keptClusters = run.clusters.filter(cl => kept.has(cl));
-            if (keptClusters.length === 0) {
-                pieces.push({ isKeep: false });
-            } else if (keptClusters.length === run.clusters.length) {
-                pieces.push({ isKeep: true, run, clusters: run.clusters });
-            } else {
-                const gapStart = run.clusters.findIndex(cl => !kept.has(cl));
-                let gapEnd = gapStart;
-                while (gapEnd < run.clusters.length && !kept.has(run.clusters[gapEnd])) gapEnd++;
-                const before = run.clusters.slice(0, gapStart);
-                const after = run.clusters.slice(gapEnd);
-                if (before.length) pieces.push({ isKeep: true, run, clusters: before });
-                pieces.push({ isKeep: false });
-                if (after.length) pieces.push({ isKeep: true, run, clusters: after });
-            }
-        }
-        const stretches = [];
-        for (const p of pieces) {
-            const last = stretches[stretches.length - 1];
-            if (last && last.isKeep === p.isKeep) last.items.push(p);
-            else stretches.push({ isKeep: p.isKeep, items: [p] });
-        }
-
-        /* A single greedy cut removes one visually-contiguous middle chunk,
-           but bidi can relocate nested runs, so that one visual gap can land
-           as more than one logical gap — no single place left for one marker.
-           ⚠ LIMITATION: falls back to the logical cut for that case (see
-           README §"Interaction with bidirectional text"). */
-        if (stretches.filter(s => !s.isKeep).length > 1) {
-            return cutLogical(full, avail, prefixBudget, marker, dir);
-        }
-
-        const emitPiece = (p) => {
-            const text = p.clusters.map(cl => cl.text).join('');
-            return p.run.level === baseLevel ? text : isolateStart(p.run.level) + text + PDI;
-        };
-        return stretches.map(s => s.isKeep ? s.items.map(emitPiece).join('') : marker).join('');
-    }
-
-    /* Common Strong RTL characters: Hebrew, Arabic, Syriac, Thaana, NKo, Arabic
-       Extended-A, and the Hebrew/Arabic presentation-form blocks. */
-    const RTL_STRONG = /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0750-\u077F\u0780-\u07BF\u07C0-\u07FF\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
-    const needsBidi = (text, dir) => dir === 'rtl' || RTL_STRONG.test(text);
-
-    function cut(full, avail, prefixBudget, marker, dir) {
-        if (!needsBidi(full, dir)) return cutLogical(full, avail, prefixBudget, marker, dir);
-
-        // bidi text uses cutVisual (falls back to cutLogical in one edge case, see above)
-        return cutVisual(full, avail, prefixBudget, marker, dir);
+        return suffix;
     }
 
     /* ── 6. Render: the a11y contract ─────────────────────────────────────
-       The full string stays in the accessible tree; the truncated layer is
-       presentation only. Truncation must never change what AT announces. */
+       The prefix carries the whole string and is the only layer in the
+       accessible tree; the suffix repeats the end of it for presentation only.
+       Truncation must never change what AT announces. */
     function buildLayers(el, fullText) {
         el.textContent = '';
 
-        const full = document.createElement('span');
-        full.className = 'mt-full';
-        full.textContent = fullText;
+        const prefix = document.createElement('span');
+        prefix.className = 'mt-prefix';
+        prefix.textContent = fullText;
 
-        const visual = document.createElement('span');
-        visual.setAttribute('aria-hidden', 'true');
+        const suffix = document.createElement('span');
+        suffix.className = 'mt-suffix';
+        suffix.setAttribute('aria-hidden', 'true');
 
-        el.append(full, visual);
-        return visual;
+        const line = document.createElement('span');
+        line.className = 'mt-line';
+        line.append(prefix, suffix);   // no whitespace between them, it would render
+
+        el.append(line);
+        return { line, prefix, suffix };
+    }
+
+    /* Hand the marker to the browser. Custom strings are not supported
+       everywhere, so fall back to the ellipsis the prefix rule already sets. */
+    function markerStyle(marker) {
+        if (marker === '…') return 'ellipsis';
+        const quoted = JSON.stringify(marker);
+        return CSS.supports('text-overflow', quoted) ? quoted : 'ellipsis';
+    }
+
+    /*  Returns true when the current selection ends exactly at the end of the text node. */
+    function selectionCoversPrefixEnd(prefix) {
+        const selection = document.getSelection();
+        const text = prefix.firstChild;
+        if (!selection || selection.isCollapsed || !selection.rangeCount || !text) return false;
+
+        try {
+            // (text, text.length) is the position immediately after the last char of prefix
+            return selection.getRangeAt(0).comparePoint(text, text.length) === 0;
+        } catch {
+            return false;
+        }
+    }
+
+    function paintFauxSelection(el) {
+        const state = registry.get(el);
+        if (!state) return;
+
+        const { prefix, suffix } = state.layers;
+        suffix.classList.toggle(
+            'mt-faux-selected',
+            state.overflowing && selectionCoversPrefixEnd(prefix)
+        );
     }
 
     /* ── 7. Lifecycle ─────────────────────────────────────────────────────
@@ -533,7 +403,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
             const state = registry.get(el);
             const newText = el.textContent;   // user's write nuked our layers
             state.fullText = newText.trim();
-            state.visual = buildLayers(el, newText);   // rebuild them
+            state.layers = buildLayers(el, newText);   // rebuild them
             update(el);
         }
     });
@@ -554,38 +424,91 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         // TODO: bail unless the element is a block container
 
         const fullText = el.textContent.trim();                 // TODO: mixed inline content
-        const visual = buildLayers(el, fullText);
-        registry.set(el, { desc, fullText, visual, gen: 0 });
+        const layers = buildLayers(el, fullText);
+        const onScroll = () => paintSuffix(el);
+        registry.set(el, { desc, fullText, layers, onScroll });
 
-        // triggers so far: resize, DOM mutation. font load + manual refresh() still TODO
+        // triggers so far: resize, DOM mutation, scroll. font load + manual refresh() still TODO
         ro.observe(el);
         mo.observe(el, {
             childList: true,
             subtree: true,
             characterData: true,
         });
+        el.addEventListener('scroll', onScroll, { passive: true });
         update(el);
     }
 
-    async function update(el) {
+    function update(el) {
         const state = registry.get(el);
         if (!state) return;
 
         const cs = getComputedStyle(el);
         setFont(cs);
-        const avail = el.getBoundingClientRect().width
+        const avail = el.clientWidth
             - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
 
-        const prefixBudget = resolvePrefixBudget(state.desc.offset, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });
-        const dir = cs.direction;
+        const { prefix, suffix } = state.layers;
 
-        const gen = ++state.gen;
-        const result = await cut(state.fullText, avail, prefixBudget, state.desc.marker, dir);
+        state.scrollable = cs.overflowX === 'auto' || cs.overflowX === 'scroll';
+        state.overflowing = false;
+        state.suffix = '';
+        el.classList.toggle('mt-scrolls', state.scrollable);
 
-        if (state.gen !== gen || !registry.has(el)) return; // superseded, or disconnected mid-flight
-        state.visual.textContent = result;
+        if (width(state.fullText) <= avail) {   // fits, so nothing to split and no marker
+            prefix.style.width = '';
+            prefix.style.textOverflow = '';
+            suffix.style.width = '';
+            suffix.style.marginInlineStart = '';
+            suffix.textContent = '';
+            suffix.classList.remove('mt-faux-selected');
+            mo.takeRecords();
+            return;
+        }
 
+        const markerWidth = width(state.desc.marker);
+        const prefixBoxWidth = resolvePrefixBoxWidth(state.desc.offset, { avail, ch: width('0'), markerWidth });
+        const suffixBoxWidth = avail - prefixBoxWidth;
+        state.suffix = getSuffix(state.fullText, suffixBoxWidth);
+        state.overflowing = true;
+
+        if (state.scrollable) {
+            const padEnd = parseFloat(cs.direction === 'rtl' ? `-${cs.paddingLeft}` : cs.paddingRight);
+            prefix.style.width = '';
+            prefix.style.textOverflow = '';
+            suffix.style.boxShadow = `${padEnd}px 0 0 Canvas`;
+            paintSuffix(el, true);
+        } else {
+            prefix.style.width = `${prefixBoxWidth}px`;
+            prefix.style.textOverflow = markerStyle(state.desc.marker);
+            suffix.style.width = `${suffixBoxWidth}px`;
+            suffix.style.marginInlineStart = '';
+            suffix.style.boxShadow = '';
+            suffix.textContent = state.suffix;
+        }
+
+        paintFauxSelection(el);
         mo.takeRecords(); // prevent infinite loop
+    }
+
+    function paintSuffix(el, force) {
+        const state = registry.get(el);
+        if (!state || !state.scrollable || !state.overflowing) return;
+
+        const atEnd = Math.abs(el.scrollLeft) >= el.scrollWidth - el.clientWidth - 1;
+        const text = (atEnd ? '' : state.desc.marker) + state.suffix;
+
+        const { suffix } = state.layers;
+        if (!force && text === suffix.textContent) return;
+
+        suffix.textContent = text;
+        suffix.style.width = '';
+        suffix.style.marginInlineStart = '0';
+
+        const suffixWidth = suffix.getBoundingClientRect().width;
+        suffix.style.marginInlineStart = `${-suffixWidth}px`;
+
+        mo.takeRecords();
     }
 
 
@@ -593,10 +516,16 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
         const state = registry.get(el);
         if (!state) return;
         ro.unobserve(el);
+        el.removeEventListener('scroll', state.onScroll);
+        el.classList.remove('mt-scrolls');
         el.textContent = state.fullText;
         mo.takeRecords();
         registry.delete(el);
     }
+
+    document.addEventListener('selectionchange', () => {
+        for (const el of document.querySelectorAll('.truncate')) paintFauxSelection(el);
+    });
 
     /* ── 8. Boot ──────────────────────────────────────────────────────────
        Custom properties cannot be queried with a CSS selector, so scan a
@@ -605,7 +534,7 @@ truncated according to the spec (with some caveats, e.g. float/scroll not yet im
     for (const el of document.querySelectorAll('.truncate')) register(el);
 
     /* Expose for console experiments: MT.disconnect(el), MT.register(el) */
-    window.MT = { register, update, disconnect, parse, cut };
+    window.MT = { register, update, disconnect, parse, getSuffix };
 </script>
 
 </html>

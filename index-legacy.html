@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>ellipsis middle</title>
+
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        max-width: 70ch;
+    }
+
+    .truncate {
+        font-family: ui-monospace, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        resize: horizontal;
+        /* demo only: drag to resize */
+        border: 1px solid #999;
+        padding: 4px 6px;
+        width: 40ch;
+        --text-overflow: ellipsis middle;
+    }
+
+    .scrollable {
+        overflow: auto;
+    }
+
+    .existing {
+        --text-overflow: ellipsis;
+    }
+
+    .rtl-container {
+        display: flex;
+        flex-direction: row-reverse;
+    }
+
+    .existing-rtl {
+        --text-overflow: ellipsis;
+        direction: rtl;
+    }
+
+    .offset-30 {
+        --text-overflow: ellipsis 30%;
+    }
+
+    .offset-3ch {
+        --text-overflow: ellipsis 3ch;
+    }
+
+    .offset-px {
+        --text-overflow: ellipsis 50px;
+    }
+
+    .offset-start {
+        --text-overflow: ellipsis 100%;
+    }
+
+    .offset-start-4ch {
+        --text-overflow: ellipsis calc(100% - 4ch);
+    }
+
+    .offset-end {
+        --text-overflow: ellipsis 0%;
+    }
+
+    .custom-marker {
+        --text-overflow: " [..]" middle;
+    }
+
+    .bidi {
+        width: 10ch;
+    }
+
+    .small-line-box {
+        --text-overflow: ellipsis middle;
+    }
+
+    .small-full {
+        width: 74ch;
+    }
+
+    .small-mild {
+        width: 22ch;
+    }
+
+    .small-prefix {
+        width: 4ch;
+    }
+
+    .small-marker {
+        width: 1ch;
+    }
+
+    /* full string stays in the a11y tree, invisible on screen.
+       position: absolute so it's excluded from intrinsic sizing */
+    .mt-full {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .grammar {
+        display: block;
+        white-space: pre-wrap;
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+    }
+</style>
+
+<h1><code>text-overflow: ellipsis middle</code></h1>
+This is a minimal demo of the proposed middle ellipsis spec for text overflow handling.
+The elements are styled by declaring custom CSS property <code>--text-overflow</code>, and
+truncated according to the spec (with some caveats, e.g. float/scroll not yet implemented).
+<h2>Syntax</h2>
+<code class="grammar">text-overflow = [ [ clip | &lt;overflow-marker&gt; ] && [ start | end ]? ]{1,2}
+                | [ &lt;overflow-marker&gt; && [ middle | &lt;length-percentage&gt; ] ];
+                &lt;overflow-marker&gt; = [ ellipsis | &lt;string&gt; | fade | &lt;fade()&gt; ];
+</code>
+
+<h2>Demo</h2>
+<h3>Offset calculation</h3>
+<h4><code>ellipsis middle</code></h4>
+<p class="truncate">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 30%</code></h4>
+<p class="truncate offset-30">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 3ch</code></h4>
+<p class="truncate offset-3ch">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 50px</code></h4>
+<p class="truncate offset-px">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 100%</code> (= <code>text-overflow: ellipsis start</code>)</h4>
+<p class="truncate offset-start">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis calc(100% - 4ch)</code></h4>
+<p class="truncate offset-start-4ch">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4><code>ellipsis 0%</code> (= <code>text-overflow: ellipsis end</code> / <code>text-overflow: ellipsis</code>)</h4>
+<p class="truncate offset-end">The quick brown fox jumps over the lazy dog by the river bank</p>
+<h4>Custom marker</h4>
+<p class="truncate custom-marker">The quick brown fox jumps over the lazy dog by the river bank</p>
+
+<h3>Grapheme</h3>
+<p class="truncate" dir="">
+    👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦
+</p>
+
+<h3>RTL</h3>
+<div class="rtl-container">
+    <p class="truncate" dir="rtl">هذه الفقرة باللغة العربية ، لذا يجب الانتقال من اليمين إلى اليسار.</p>
+</div>
+<h3>Bidirectional text</h3>
+<p class="truncate">bahrain مصر kuwait</p>
+<p class="truncate">The title is مفتاح معايير الويب in Arabic.</p>
+<p class="truncate" dir="ltr">The title is <cite dir="rtl">AN INTRODUCTION TO <span dir="ltr">c++</span></cite> in
+    arabic.</p>
+<div class="rtl-container">
+    <p class="truncate" dir="rtl">W3C מעביר את שירותי הארחה באירופה ל - ERCIM.</p>
+</div>
+
+<h3>Bidirectional text - file names</h3>
+<p class="truncate bidi">report_تقرير_final.pdf</p>
+<div class="rtl-container">
+    <p class="truncate bidi" dir="rtl">تقرير_السنوي.docx</p>
+</div>
+<p class="truncate bidi" dir="ltr">تقرير_السنوي.docx</p>
+<p class="truncate bidi" dir="ltr">تقرير_2024_annual_report.pdf</p>
+<p class="truncate bidi">report_تقرير.pdf</p>
+<p class="truncate bidi">file_name.תקציר</p>
+<p class="truncate bidi">draft(تقرير).docx</p>
+
+<h3>Small line box (overflow marker &gt; prefix &gt; suffix priority)</h3>
+<p class="truncate small-line-box small-full">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-mild">Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+</p>
+<p class="truncate small-line-box small-prefix">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
+<p class="truncate small-line-box small-marker">Lorem Ipsum is simply dummy text of the printing and typesetting
+    industry.</p>
+
+<h3>Scrollable</h3>
+<p class="truncate scrollable">This text is for testing how scrollable truncation is handled.</p>
+
+<script>
+    'use strict';
+
+    /* ── 1. Feature detection ─────────────────────────────────────────────
+       a polyfill should delete itself once native support lands (always
+       false today, since nothing ships this syntax yet) */
+    const NATIVE = CSS.supports('text-overflow', 'ellipsis middle');
+
+    /* one <length-percentage> term: number + unit */
+    const TERM = /(-?\d*\.?\d+)(%|ch|px)/;
+
+    /* whole-value shape: calc( term ( ± term )* ) */
+    const CALC = new RegExp(
+        String.raw`^calc\(\s*` + TERM.source +
+        String.raw`(?:\s+[+-]\s+` + TERM.source + String.raw`)*\s*\)$`,
+        'i'
+    );
+
+    /* ── 2. Parser ────────────────────────────────────────────────────────
+       Input: the raw string from the --text-overflow carrier property.
+       Output: a descriptor object, or null for anything not understood.
+       Grammar subset: [ ellipsis | <string> ] && [ middle | <percentage> ]
+       null on anything unrecognized — don't accept what native would reject */
+
+    /**
+     * Example: 'calc(100% - 4ch)' → { type: 'calc', terms: [
+     *   { sign: +1, type: 'percent', value: 100 },
+     *   { sign: -1, type: 'length', value: 4, unit: 'ch' },
+     * ] }
+     */
+    function parseCalc(raw) {
+        const inner = raw.slice(raw.indexOf('(') + 1, -1).trim();
+        const terms = [];
+        let sign = 1;
+
+        for (const tok of inner.split(/\s+/)) {
+            if (tok === '+') { sign = 1; continue; }
+            if (tok === '-') { sign = -1; continue; }
+            const m = /^(-?\d*\.?\d+)(%|ch|px)$/i.exec(tok);
+            terms.push(m[2] === '%'
+                ? { sign, type: 'percent', value: parseFloat(m[1]) }
+                : { sign, type: 'length', value: parseFloat(m[1]), unit: m[2].toLowerCase() });
+        }
+        return { type: 'calc', terms };
+    }
+
+    function parse(raw) {
+        const tokens = raw.trim().match(
+            /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|calc\([^)]*\)|\S+/g
+        ) ?? [];
+        if (tokens.length !== 2) return null;
+
+        const desc = { marker: null, offset: null };
+        const markerToken = tokens[0];
+        const offsetToken = tokens[1];
+
+        if (markerToken === 'ellipsis') desc.marker = '\u2026';
+        else if (markerToken === 'clip') desc.marker = '';
+        else if (/^(['"]).*\1$/.test(markerToken)) desc.marker = markerToken.slice(1, -1);
+        else desc.marker = '';
+
+        if (offsetToken === 'middle') desc.offset = { type: 'percent', value: 50 };
+        else if (/^\d+(\.\d+)?%$/.test(offsetToken))
+            desc.offset = { type: 'percent', value: parseFloat(offsetToken) };
+        else if (/^\d+(\.\d+)?px$/.test(offsetToken))
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'px' };
+        else if (/^\d+(\.\d+)?ch$/.test(offsetToken))
+            desc.offset = { type: 'length', value: parseFloat(offsetToken), unit: 'ch' };
+        else if (CALC.test(offsetToken))
+            desc.offset = parseCalc(offsetToken);
+        else return null;
+
+        return desc.marker && desc.offset ? desc : null;
+    }
+
+    /* ── 3. Offset resolution ─────────────────────────────────────────────
+       Finds the length of prefix given an offset from line-end.
+       Example: avail = 40px, offset=10px, markerWidth = 2px
+                return 40-10-2 = 28px */
+    function resolvePrefixBudget(offset, options) {
+        const { avail, ch, markerWidth } = options;
+
+        const resolveTerm = (t) => {
+            if (t.type === 'percent') return avail * t.value / 100;
+            if (t.type === 'length') {
+                if (t.unit === 'px') return t.value;
+                if (t.unit === 'ch') return t.value * ch;
+            }
+        }
+        const terms = offset.type === 'calc' ? offset.terms : [{ sign: 1, ...offset }];
+        const px = avail - terms.reduce((sum, t) => sum + t.sign * resolveTerm(t), 0) - markerWidth;
+        return Math.min(px, avail - markerWidth); // negative when the cut point sits less than a marker's width from the line start
+    }
+
+    /* ── 4. Measurement ───────────────────────────────────────────────────
+       Canvas measureText stands in for the engine's shaper. Firefox often
+       returns an empty `font` shorthand, so rebuild it from longhands. */
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    function setFont(cs) {
+        ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    }
+    const width = (text) => ctx.measureText(text).width;
+
+    /* ── 5. The cut ───────────────────────────────────────────────────────
+       Greedy: grow the prefix from the string start up to its budget, give
+       the marker its width, fill the rest from the string end.
+       Priority when space runs out: marker, then prefix, then suffix.
+
+       ⚠ This slices the string in LOGICAL order, one code point at a time.
+       That only matches visual order for pure-LTR text — real bidi handling
+       cuts in VISUAL order instead (bidi-middle-truncation.md). Biggest known
+       gap in this version. */
+
+    function cutLogical(full, avail, prefixBudget, marker, dir) {
+        if (width(full) <= avail) return full;           // no overflow, no marker
+
+        const markerW = width(marker);
+        if (markerW >= avail) return marker;             // available space is shorter than marker
+
+        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        const clusters = Array.from(seg.segment(full), s => s.segment);
+
+        if (prefixBudget >= 0 && width(clusters[0]) > prefixBudget) prefixBudget = avail - markerW;
+
+        let prefix = '', prefixCount = 0;
+        for (const cl of clusters) {
+            if (width(prefix + cl) > prefixBudget) break;
+            prefix += cl;
+            prefixCount += 1;
+        }
+
+        const suffixBudget = avail - width(prefix) - markerW;
+        let suffix = '', suffixCount = 0;
+        for (let i = clusters.length - 1; i >= 0; i--) {
+            if (width(clusters[i] + suffix) > suffixBudget) break;
+            suffix = clusters[i] + suffix;
+            suffixCount += 1;
+        }
+
+        /* Guard: prefix and suffix must not overlap in the source string,
+           or short strings render duplicated content. */
+        if (prefixCount + suffixCount >= clusters.length) return full;
+
+        return prefix + marker + suffix;
+    }
+
+    let bidiPromise;
+    function loadBidi() {
+        return bidiPromise ??= import('https://esm.sh/bidi-js').then(m => m.default());
+    }
+    loadBidi(); // preload bidi.js to avoid flashing when parsing bidi text
+
+    /* Unicode directional isolates: force a run to resolve as RTL/LTR on its
+       own, independent of whatever ends up next to it after truncation. */
+    const RLI = '⁧', LRI = '⁦', PDI = '⁩';
+    const isolateStart = (level) => (level % 2 ? RLI : LRI);
+
+    async function cutVisual(full, avail, prefixBudget, marker, dir) {
+        if (width(full) <= avail) return full;
+        const markerW = width(marker);
+        if (markerW >= avail) return marker;
+
+        const bidi = await loadBidi();
+        const embeddingLevels = bidi.getEmbeddingLevels(full, dir);
+        const reorderSegments = bidi.getReorderSegments(full, embeddingLevels);
+        const baseLevel = embeddingLevels.paragraphs[0].level;
+
+        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        const clusters = [];
+        let charIdx = 0;
+        for (const { segment: text } of seg.segment(full)) {
+            clusters.push({ text, level: embeddingLevels.levels[charIdx] });
+            charIdx += text.length;
+        }
+
+        /* Map each logical code-unit index to its visual position by replaying
+           the same range-reversals bidi-js used to compute reorderSegments
+           (UAX#9 rule L2: reverse runs of level >= L, for L from max down to 1). */
+        const order = Array.from({ length: full.length }, (_, i) => i);
+        for (const [start, end] of reorderSegments) {
+            const slice = order.slice(start, end + 1).reverse();
+            order.splice(start, slice.length, ...slice);
+        }
+        const visualPosOf = new Array(full.length);
+        order.forEach((logicalIdx, visualPos) => { visualPosOf[logicalIdx] = visualPos; });
+
+        // group clusters into maximal same-level runs (logical order), tracking
+        // each run's starting code-unit index for the visual sort below
+        const runs = [];
+        let runOffset = 0;
+        for (const cl of clusters) {
+            const last = runs[runs.length - 1];
+            if (last && last.level === cl.level) last.clusters.push(cl);
+            else runs.push({ level: cl.level, start: runOffset, clusters: [cl] });
+            runOffset += cl.text.length;
+        }
+        // Visual position 0 is always the screen-leftmost run, regardless of
+        // paragraph direction — but "prefix" means closest to the paragraph's
+        // own start edge, which is the right side for an RTL base level.
+        // Flip the sort for RTL so visualRuns[0] is always the true start.
+        const dirSign = baseLevel % 2 ? -1 : 1;
+        const visualRuns = runs.slice().sort((a, b) => dirSign * (visualPosOf[a.start] - visualPosOf[b.start]));
+
+        const firstCluster = visualRuns[0].clusters[0];
+        if (prefixBudget >= 0 && width(firstCluster.text) > prefixBudget) prefixBudget = avail - markerW;
+
+        /* Greedy fill from the visual edges, same idea as cutLogical. A run at
+           the paragraph's own base level is never reordered, so it's safe to
+           slice character-by-character like plain text. A nested run can't be
+           split — it's kept whole or dropped whole — because bidi reordering
+           can move a nested run relative to its neighbors: keeping only part
+           of one would leave the rest in the wrong place, with dropped text
+           on both sides of it. */
+        const kept = new Set();
+        let prefixW = 0;
+        prefixWalk:
+        for (const run of visualRuns) {
+            if (run.level === baseLevel) {
+                for (const cl of run.clusters) {
+                    if (prefixW + width(cl.text) > prefixBudget) break prefixWalk;
+                    prefixW += width(cl.text);
+                    kept.add(cl);
+                }
+            } else {
+                const runText = run.clusters.map(cl => cl.text).join('');
+                if (prefixW + width(runText) > prefixBudget) break prefixWalk;
+                prefixW += width(runText);
+                run.clusters.forEach(cl => kept.add(cl));
+            }
+        }
+
+        const suffixBudget = avail - prefixW - markerW;
+        let suffixW = 0;
+        suffixWalk:
+        for (let r = visualRuns.length - 1; r >= 0; r--) {
+            const run = visualRuns[r];
+            if (run.clusters.every(cl => kept.has(cl))) continue;   // already kept by the prefix walk
+            if (run.level === baseLevel) {
+                // Base-level run, never reordered — safe to fill from this end too.
+                // Stop once a cluster already kept by the prefix walk is reached.
+                for (let i = run.clusters.length - 1; i >= 0; i--) {
+                    const cl = run.clusters[i];
+                    if (kept.has(cl)) break;
+                    if (suffixW + width(cl.text) > suffixBudget) break suffixWalk;
+                    suffixW += width(cl.text);
+                    kept.add(cl);
+                }
+            } else {
+                const runText = run.clusters.map(cl => cl.text).join('');
+                if (suffixW + width(runText) > suffixBudget) break suffixWalk;
+                suffixW += width(runText);
+                run.clusters.forEach(cl => kept.add(cl));
+            }
+        }
+
+        if (kept.size >= clusters.length) return full;    // overlap guard, as in cutLogical
+
+        // Split runs into keep/drop pieces, logical order.
+        // Base-level runs can split around the gap: kept-before, dropped, kept-after.
+        // Nested runs cannot be split, they're either kept or dropped.
+        const pieces = [];
+        for (const run of runs) {
+            const keptClusters = run.clusters.filter(cl => kept.has(cl));
+            if (keptClusters.length === 0) {
+                pieces.push({ isKeep: false });
+            } else if (keptClusters.length === run.clusters.length) {
+                pieces.push({ isKeep: true, run, clusters: run.clusters });
+            } else {
+                const gapStart = run.clusters.findIndex(cl => !kept.has(cl));
+                let gapEnd = gapStart;
+                while (gapEnd < run.clusters.length && !kept.has(run.clusters[gapEnd])) gapEnd++;
+                const before = run.clusters.slice(0, gapStart);
+                const after = run.clusters.slice(gapEnd);
+                if (before.length) pieces.push({ isKeep: true, run, clusters: before });
+                pieces.push({ isKeep: false });
+                if (after.length) pieces.push({ isKeep: true, run, clusters: after });
+            }
+        }
+        const stretches = [];
+        for (const p of pieces) {
+            const last = stretches[stretches.length - 1];
+            if (last && last.isKeep === p.isKeep) last.items.push(p);
+            else stretches.push({ isKeep: p.isKeep, items: [p] });
+        }
+
+        /* A single greedy cut removes one visually-contiguous middle chunk,
+           but bidi can relocate nested runs, so that one visual gap can land
+           as more than one logical gap — no single place left for one marker.
+           ⚠ LIMITATION: falls back to the logical cut for that case (see
+           README §"Interaction with bidirectional text"). */
+        if (stretches.filter(s => !s.isKeep).length > 1) {
+            return cutLogical(full, avail, prefixBudget, marker, dir);
+        }
+
+        const emitPiece = (p) => {
+            const text = p.clusters.map(cl => cl.text).join('');
+            return p.run.level === baseLevel ? text : isolateStart(p.run.level) + text + PDI;
+        };
+        return stretches.map(s => s.isKeep ? s.items.map(emitPiece).join('') : marker).join('');
+    }
+
+    /* Common Strong RTL characters: Hebrew, Arabic, Syriac, Thaana, NKo, Arabic
+       Extended-A, and the Hebrew/Arabic presentation-form blocks. */
+    const RTL_STRONG = /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0750-\u077F\u0780-\u07BF\u07C0-\u07FF\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+    const needsBidi = (text, dir) => dir === 'rtl' || RTL_STRONG.test(text);
+
+    function cut(full, avail, prefixBudget, marker, dir) {
+        if (!needsBidi(full, dir)) return cutLogical(full, avail, prefixBudget, marker, dir);
+
+        // bidi text uses cutVisual (falls back to cutLogical in one edge case, see above)
+        return cutVisual(full, avail, prefixBudget, marker, dir);
+    }
+
+    /* ── 6. Render: the a11y contract ─────────────────────────────────────
+       The full string stays in the accessible tree; the truncated layer is
+       presentation only. Truncation must never change what AT announces. */
+    function buildLayers(el, fullText) {
+        el.textContent = '';
+
+        const full = document.createElement('span');
+        full.className = 'mt-full';
+        full.textContent = fullText;
+
+        const visual = document.createElement('span');
+        visual.setAttribute('aria-hidden', 'true');
+
+        el.append(full, visual);
+        return visual;
+    }
+
+    /* ── 7. Lifecycle ─────────────────────────────────────────────────────
+       register → (updates driven by triggers) → disconnect restores DOM. */
+    const registry = new WeakMap();
+    const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) update(entry.target);
+    });
+    const mo = new MutationObserver((mutations) => {
+        // Dedupe — one user write can fire multiple mutation records
+        const affected = new Set();
+        for (const m of mutations) {
+            let node = m.target;
+            while (node && !registry.has(node)) node = node.parentNode;
+            if (node) affected.add(node);
+        }
+        for (const el of affected) {
+            const state = registry.get(el);
+            const newText = el.textContent;   // user's write nuked our layers
+            state.fullText = newText.trim();
+            state.visual = buildLayers(el, newText);   // rebuild them
+            update(el);
+        }
+    });
+
+    function register(el) {
+        if (NATIVE || registry.has(el)) return;          // native handles it, or already registered
+
+        const raw = getComputedStyle(el).getPropertyValue('--text-overflow').trim();
+
+        // defer to native text-overflow if the value is already supported
+        if (CSS.supports('text-overflow', raw)) {
+            el.style.setProperty('text-overflow', raw);
+            return;
+        }
+
+        const desc = parse(raw);
+        if (!desc) return;
+        // TODO: bail unless the element is a block container
+
+        const fullText = el.textContent.trim();                 // TODO: mixed inline content
+        const visual = buildLayers(el, fullText);
+        registry.set(el, { desc, fullText, visual, gen: 0 });
+
+        // triggers so far: resize, DOM mutation. font load + manual refresh() still TODO
+        ro.observe(el);
+        mo.observe(el, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+        });
+        update(el);
+    }
+
+    async function update(el) {
+        const state = registry.get(el);
+        if (!state) return;
+
+        const cs = getComputedStyle(el);
+        setFont(cs);
+        const avail = el.getBoundingClientRect().width
+            - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);   // content box, not border box
+
+        const prefixBudget = resolvePrefixBudget(state.desc.offset, { avail, ch: width('0'), markerWidth: width(state.desc.marker) });
+        const dir = cs.direction;
+
+        const gen = ++state.gen;
+        const result = await cut(state.fullText, avail, prefixBudget, state.desc.marker, dir);
+
+        if (state.gen !== gen || !registry.has(el)) return; // superseded, or disconnected mid-flight
+        state.visual.textContent = result;
+
+        mo.takeRecords(); // prevent infinite loop
+    }
+
+
+    function disconnect(el) {
+        const state = registry.get(el);
+        if (!state) return;
+        ro.unobserve(el);
+        el.textContent = state.fullText;
+        mo.takeRecords();
+        registry.delete(el);
+    }
+
+    /* ── 8. Boot ──────────────────────────────────────────────────────────
+       Custom properties cannot be queried with a CSS selector, so scan a
+       known candidate class. (A production version might scan stylesheets
+       to discover which selectors set the carrier property.) */
+    for (const el of document.querySelectorAll('.truncate')) register(el);
+
+    /* Expose for console experiments: MT.disconnect(el), MT.register(el) */
+    window.MT = { register, update, disconnect, parse, cut };
+</script>
+
+</html>
